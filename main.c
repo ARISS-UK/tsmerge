@@ -284,8 +284,8 @@ int main(int argc, char *argv[])
 	int64_t timestamp;
 	
 	/* Initialise the merger */
-	/* In my example file, PID 1401 contains the PCR clock */
-	mx_init(&_merger, 1401);
+	/* In my example file, PID 256 contains the PCR clock */
+	mx_init(&_merger, 256);
 	
 	/* Prepare the network - ignore SIGPIPE on viewer disconnection */
 	signal(SIGPIPE, SIG_IGN);
