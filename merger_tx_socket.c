@@ -13,10 +13,16 @@
 #include "timing.h"
 #include "viewer.h"
 #include "merger.h"
-#include "merger_rx.h"
-#include "merger_tx.h"
+#include "merger_rx_socket.h"
+#include "merger_tx_feed.h"
 #include "merger_tx_socket.h"
 
+/* This function is run on a thread, started from main()
+ *
+ * This function listens on the TCP port for incoming connections from viewers
+ * On connection, the viewer's socket file descriptor is added to the 'viewers' array
+ *  to be serviced by 'merger_tx_feed'
+ */
 void *merger_tx_socket(void* arg)
 {
   (void) arg;

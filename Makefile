@@ -8,11 +8,11 @@ TSMERGE_SRCS = main.c \
                 ts.c \
                 timing.c \
                 merger.c \
-                merger_rx.c \
-                merger_tx.c \
+                merger_rx_feed.c \
+                merger_rx_socket.c \
+                merger_tx_feed.c \
                 merger_tx_socket.c \
-                merger_rx_buffer.c \
-                merger_rx_feed.c
+                merger_rx_buffer.c
 
 TSMERGE_LIBS = -lpthread
 

@@ -11,13 +11,18 @@
 #include "timing.h"
 #include "viewer.h"
 #include "merger.h"
-#include "merger_rx.h"
-#include "merger_tx.h"
+#include "merger_rx_socket.h"
+#include "merger_tx_feed.h"
 #include "merger_tx_socket.h"
 #include "merger_rx_buffer.h"
 
-
-void *merger_rx(void *Buffer_void_ptr)
+/* This function is run on a thread, started from main()
+ *
+ * This function listens on the UDP port for incoming datagrams from receiver stations
+ * On reception, the packet is split in MX_packets and each is added to the rxBuffer
+ *  to be serviced by 'merger_rx_feed'
+ */
+void *merger_rx_socket(void *Buffer_void_ptr)
 {
   rxBuffer_t *rxBufPtr;
   rxBufPtr = (rxBuffer_t *)Buffer_void_ptr;
@@ -65,10 +70,7 @@ void *merger_rx(void *Buffer_void_ptr)
   
   /* Infinite loop, blocks until incoming packet */
   while (1)
-  {
-    /* Zero out buffer (TODO: Probably not needed) */
-    //memset(buf, 0, BUFSIZE);
-    
+  {    
     /* Block here until we receive a packet */
 	  n = recv(sockfd, buf, MERGER_UDP_RX_BUFSIZE, 0);
     if (n < 0)
@@ -87,9 +89,9 @@ void *merger_rx(void *Buffer_void_ptr)
     //printf("Incoming packet received of %d bytes.\n", n);
     
     /* Feed in the packet(s) */
-	  for(i = 0; i < n; i += MX_PACKET_LEN)
-	  {
-	    rxBufferPush(rxBufPtr, timestamp, &buf[i]);
-	  }
+    for(i = 0; i < n; i += MX_PACKET_LEN)
+    {
+      rxBufferPush(rxBufPtr, timestamp, &buf[i]);
+    }
   }
 }

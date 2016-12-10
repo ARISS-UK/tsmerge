@@ -11,9 +11,10 @@
 #include "timing.h"
 #include "viewer.h"
 #include "merger.h"
-#include "merger_rx.h"
-#include "merger_tx.h"
+#include "merger_rx_socket.h"
+#include "merger_tx_feed.h"
 #include "merger_tx_socket.h"
+
 
 static void _close_connection(viewer_t *viewers, int i)
 {
@@ -27,7 +28,14 @@ static void _close_connection(viewer_t *viewers, int i)
 	viewers[i].timestamp = 0;
 }
 
-void *merger_tx(void* arg)
+/* This function is run on a thread, started from main()
+ *
+ * This function loops over the 'viewers' array,
+ *  checking for when 'last_station' and 'last_count' do not match the latest selected segment
+ * On this condition, the latest segment is sent to the relevant viewer,
+ *  and their 'last_station' and 'last_count' data is updated.
+ */
+void *merger_tx_feed(void* arg)
 {
   (void) arg;
   uint64_t timestamp;
@@ -45,15 +53,10 @@ void *merger_tx(void* arg)
 			
 			if(viewers[i].sock <= 0) continue;
 			
-			//printf("Viewer counter: %d: %d\n",i,viewers[i].last_counter);
-			
 			/* See if there is any data still to send to this viewer */
 			pthread_mutex_lock(&merger.lock);
 			while((p = mx_next(&merger, viewers[i].last_station, viewers[i].last_counter)) != NULL)
 			{
-			  //printf("TX Data content: 0x%02X%02X%02X%02X\n",
-        //  p->raw[0], p->raw[1], p->raw[2], p->raw[3]);
-			  //printf("New data for viewer, count now: %d: %d\n",i,viewers[i].last_counter);
 				/* Try to send the new data to the viewer */
 				r = send(viewers[i].sock, p->raw, TS_PACKET_SIZE, 0);
 				if(r < 0)
