@@ -1,4 +1,5 @@
 
+
 CC=gcc
 CFLAGS=-gdwarf-3 -Og -Wall
 LDFLAGS=
@@ -24,8 +25,11 @@ TSPUSH_SRCS = push.c \
 TSINFO_BIN = tsinfo
 TSINFO_SRCS = info.c \
                 ts.c
+                
 
-all: tspush tsmerge tsinfo
+TARGETS = $(TSMERGE_BIN) $(TSPUSH_BIN) $(TSINFO_BIN)
+
+all: $(TARGETS)
 
 tsmerge:
 	$(CC) $(CFLAGS) $(TSMERGE_SRCS) -o $(TSMERGE_BIN) $(LDFLAGS) $(TSMERGE_LIBS)
@@ -37,5 +41,5 @@ tsinfo:
 	$(CC) $(CFLAGS) $(TSINFO_SRCS) -o $(TSINFO_BIN) $(LDFLAGS)
 
 clean:
-	rm -fv *.o $(TSMERGE_BIN) $(TSPUSH_BIN) $(TSINFO_BIN)
+	rm -fv *.o $(TARGETS)
 
