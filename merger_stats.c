@@ -18,6 +18,7 @@
 #define MERGER_STATS_UDP_PORT   5680
 
 extern rxBuffer_t rxBuffer;
+extern mx_thread_t mx_threads[];
 
 static void udpstat(char* fmt, ...)
 {
@@ -125,11 +126,47 @@ static void stats_selection(void)
     pthread_mutex_unlock(&merger.lock);
   }
 }
+
+
+static void stats_threads(void)
+{
+  int i;
+  int64_t timestamp_tmp, cpu_time_tmp;
+  char tmpString[1024];
   
+  tmpString[0] = '\0';
+  sprintf(tmpString,"{\"type\":\"threads\",\"threads\":[");
+  
+  /* Print thread CPU usage time since last sampled */
+  for(i=0; i<MX_THREAD_NUMBER; i++)
+  {
+    timestamp_tmp = timestamp_ms();
+    cpu_time_tmp = thread_timestamp(mx_threads[i].thread);
+    
+    if(i!=0)
+    {
+      /* Comma seperation */
+      sprintf(tmpString,"%s,",tmpString);
+    }
+    
+    sprintf(tmpString,"%s{\"id\":%d,\"name\":\"%s\",\"cpu_percent\":%f}",
+      tmpString,
+      i,
+      mx_threads[i].name,
+      100*(double)(cpu_time_tmp - mx_threads[i].last_cpu)
+            / (timestamp_tmp - mx_threads[i].last_cpu_ts)
+    );
+    
+    mx_threads[i].last_cpu_ts = timestamp_tmp;
+    mx_threads[i].last_cpu = cpu_time_tmp;
+  }
+  
+  udpstat("%s]}",tmpString);
+}
 
 /* This function is run on a thread, started from main()
  *
- * This function collects stats 
+ * This function collects stats and pushes them out as JSON over a local UDP socket 
  */
 void *merger_stats(void* arg)
 {
@@ -140,9 +177,14 @@ void *merger_stats(void* arg)
     /* UDP Rx Circular Buffer */
     stats_rxCircularBuffer();
     
+    /* RX per-station Stats */
     stats_stations();
     
+    /* Output contribution stats */
     stats_selection();
+    
+    /* Server threads stats */
+    stats_threads();
     
     sleep_ms(100);
   }

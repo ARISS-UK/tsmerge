@@ -26,17 +26,8 @@
 
 rxBuffer_t rxBuffer;
 
-/* Declare threads */
-/** { [pthread_t], name[64], function, arg, last_cpu, last_cpu_t } **/
-#define MX_THREAD_NUMBER   6
-mx_thread_t mx_threads[MX_THREAD_NUMBER] = {
-    { 0, "TCP TX Socket    ", merger_tx_socket, NULL,      0, 0 },
-    { 0, "MX => TCP TX Feed", merger_tx_feed,   NULL,      0, 0 },
-    { 0, "MX Loop          ", merger_mx,        NULL,      0, 0 },
-    { 0, "UDP RX => MX Feed", merger_rx_feed,   &rxBuffer, 0, 0 },
-    { 0, "UDP RX Socket    ", merger_rx_socket, &rxBuffer, 0, 0 },
-    { 0, "Stats Collection ", merger_stats,     NULL,      0, 0 }
-};
+/* See main.h for this macro to define and declare the threads */
+MX_DECLARE_THREADS();
 
 int main(int argc, char *argv[])
 {
@@ -65,39 +56,10 @@ int main(int argc, char *argv[])
 	
 	printf("tsmerger running. Go for launch.\n");
 	
-	sleep_ms(3*1000);
-	
 	while(1)
 	{
-	    /* Print thread CPU usage time since last sampled */
-	    printf("\nThread CPU: \n");
-	    int64_t timestamp_tmp, cpu_time_tmp;
-	    for(i=0; i<MX_THREAD_NUMBER; i++)
-	    {
-	        timestamp_tmp = timestamp_ms();
-	        cpu_time_tmp = thread_timestamp(mx_threads[i].thread);
-	        
-	        printf("%s: %.02f%%\n",
-	            mx_threads[i].name,
-	            100*(double)(cpu_time_tmp - mx_threads[i].last_cpu)
-	                / (timestamp_tmp - mx_threads[i].last_cpu_ts)
-	        );
-	        
-	        mx_threads[i].last_cpu_ts = timestamp_tmp;
-	        mx_threads[i].last_cpu = cpu_time_tmp;
-	    }
-	    
-	    sleep_ms(3*1000);
+	    sleep_ms(1000);
 	}
-	
-	/* Close any open sockets - TODO wrap in terminate routine */ /*
-	for(i = 0; i < _VIEWERS; i++)
-	{
-		if(_viewers[i].sock > 0)
-		{
-			close(_viewers[i].sock);
-		}
-	} */
 	
 	return(0);
 }
