@@ -15,6 +15,8 @@
 tsmerge: <span id="tsmerge_server"></span><br />
 RX Buffer Queue: <span id="rx_buffer_queue"></span> packets<br />
 RX Buffer Loss : <span id="rx_buffer_loss"></span> packets<br />
+<h4>Threads</h4>
+<div id="server_threads"></div>
 
 </body>
 <script src="/libs/jquery-3.1.1.min.js"></script>
@@ -150,6 +152,23 @@ socket.on('data', function (jdata)
         }
       }
       break;
+    
+    case 'threads':
+        var threads_list = $("<ul></ul>");
+        for(var i=0; i<data.threads.length; i++)
+        {
+            threads_list.append(
+                $("<li></li>").text(
+                    data.threads[i].name +
+                    ": "+
+                    data.threads[i].cpu_percent +
+                    "%"
+                )
+            );
+        }
+        $("#server_threads").empty();
+        $("#server_threads").append(threads_list);
+        break;
       
     default:
       console.log("Unknown data type: "+data.type);

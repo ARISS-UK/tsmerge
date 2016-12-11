@@ -18,7 +18,7 @@ io.on('connection', function(socket){
 });
 
 http.listen(HTTP_PORT, HTTP_HOST, function(){
-  console.log('listening on '+HTTP_HOST+':'+HTTP_PORT);
+  console.log('HTTP Server listening on '+HTTP_HOST+':'+HTTP_PORT);
 });
 
 var dgram = require('dgram');
@@ -31,7 +31,7 @@ server.on('listening', function () {
 
 server.on('message', function (message, remote) {
     msg = message.toString()
-    console.log(msg);
+    //console.log(msg);
     io.emit("data",msg);
 });
 

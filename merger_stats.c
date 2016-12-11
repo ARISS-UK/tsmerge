@@ -149,7 +149,7 @@ static void stats_threads(void)
       sprintf(tmpString,"%s,",tmpString);
     }
     
-    sprintf(tmpString,"%s{\"id\":%d,\"name\":\"%s\",\"cpu_percent\":%f}",
+    sprintf(tmpString,"%s{\"id\":%d,\"name\":\"%s\",\"cpu_percent\":%.2f}",
       tmpString,
       i,
       mx_threads[i].name,
@@ -171,9 +171,12 @@ static void stats_threads(void)
 void *merger_stats(void* arg)
 {
   (void) arg;
+  int i = 0;
   
   while(1)
   {
+    /* Loop is ~10hz, individual functions should clock themselves off 'i' */
+  
     /* UDP Rx Circular Buffer */
     stats_rxCircularBuffer();
     
@@ -184,8 +187,12 @@ void *merger_stats(void* arg)
     stats_selection();
     
     /* Server threads stats */
-    stats_threads();
+    if(i % 5 == 0) /* 2Hz */
+    {
+      stats_threads();
+    }
     
+    i++;
     sleep_ms(100);
   }
 }
