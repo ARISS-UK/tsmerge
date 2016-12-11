@@ -53,7 +53,7 @@ void *merger_rx_socket(void *Buffer_void_ptr)
 	}
   
   /* Set the RX buffer length */
-	optval = 212992;
+	optval = MERGER_UDP_RX_SYSBUFSIZE;
 	n = setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &optval, sizeof(optval));
 	if(n < 0)
 	{
@@ -79,7 +79,7 @@ void *merger_rx_socket(void *Buffer_void_ptr)
   while (1)
   {   
     /* Block here until we receive a packet */
-	  n = recv(sockfd, buf, MERGER_UDP_RX_BUFSIZE, 0);
+    n = recv(sockfd, buf, MERGER_UDP_RX_BUFSIZE, 0);
     if (n < 0)
     {
       fprintf(stderr, "Incoming recv failed\n");
@@ -92,7 +92,7 @@ void *merger_rx_socket(void *Buffer_void_ptr)
 		  continue;
 	  }
 	  
-		timestamp = timestamp_ms();
+    timestamp = timestamp_ms();
     
     /* Feed in the packet(s) */
     for(i = 0; i < n; i += MX_PACKET_LEN)

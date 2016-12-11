@@ -9,8 +9,9 @@
 
 #define MERGER_PCR_PID          256
 
-#define MERGER_UDP_RX_PORT      5678
-#define MERGER_UDP_RX_BUFSIZE   65535
+#define MERGER_UDP_RX_PORT          5678
+#define MERGER_UDP_RX_BUFSIZE       2048
+#define MERGER_UDP_RX_SYSBUFSIZE    212992
 
 #define MERGER_TCP_TX_PORT      5679
 
