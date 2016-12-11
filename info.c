@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
 	/* Print report */
 	
 	printf("TS Duration: %ldms\n", (ts_info.last_pcr_base - ts_info.first_pcr_base) / 90);
+	printf("TS Bitrate: ~%.03fMbps\n", (double)(ts_info.packet_count*204*8)/((ts_info.last_pcr_base - ts_info.first_pcr_base) / 90000)/(1000*1000));
 	
 	if(ts_info.pcr_extension_used)
 	{
