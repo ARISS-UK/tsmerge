@@ -21,7 +21,11 @@ TSPUSH_BIN = tspush
 TSPUSH_SRCS = push.c \
                 ts.c
 
-all: tspush tsmerge
+TSINFO_BIN = tsinfo
+TSINFO_SRCS = info.c \
+                ts.c
+
+all: tspush tsmerge tsinfo
 
 tsmerge:
 	$(CC) $(CFLAGS) $(TSMERGE_SRCS) -o $(TSMERGE_BIN) $(LDFLAGS) $(TSMERGE_LIBS)
@@ -29,6 +33,9 @@ tsmerge:
 tspush:
 	$(CC) $(CFLAGS) $(TSPUSH_SRCS) -o $(TSPUSH_BIN) $(LDFLAGS)
 
+tsinfo:
+	$(CC) $(CFLAGS) $(TSINFO_SRCS) -o $(TSINFO_BIN) $(LDFLAGS)
+
 clean:
-	rm -fv *.o $(TSMERGE_BIN) $(TSPUSH_BIN)
+	rm -fv *.o $(TSMERGE_BIN) $(TSPUSH_BIN) $(TSINFO_BIN)
 
