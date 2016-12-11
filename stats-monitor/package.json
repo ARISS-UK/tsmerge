@@ -1,0 +1,19 @@
+{
+  "name": "stats-monitor",
+  "description": "Webpage monitor for tsmerge, fed by websocket",
+  "homepage": "https://github.com/fsphil/tsmerge/",
+  "author": {
+    "name": "Phil Crump",
+    "email": "phil@philcrump.co.uk",
+    "url": "https://philcrump.co.uk"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fsphil/tsmerge"
+  },
+  "bugs": "https://github.com/fsphil/tsmerge/issues",
+  "dependencies": {
+    "express": "^4.14.0",
+    "socket.io": "^1.7.1"
+  }
+}

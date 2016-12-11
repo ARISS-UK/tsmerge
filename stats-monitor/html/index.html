@@ -1,0 +1,199 @@
+<html>
+<head>
+
+</head>
+<body>
+<h1>tsmerge</h1>
+
+<h2>Output Contribution</h2>
+<div id="output_stations"></div>
+
+<h2>Connected Stations</h2>
+<div id="rx_stations"></div>
+
+<h2>Server Status</h2>
+tsmerge: <span id="tsmerge_server"></span><br />
+RX Buffer Queue: <span id="rx_buffer_queue"></span> packets<br />
+RX Buffer Loss : <span id="rx_buffer_loss"></span> packets<br />
+<h4>Threads</h4>
+<div id="server_threads"></div>
+
+</body>
+<script src="/libs/jquery-3.1.1.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+
+var selected_count_valid = 0;
+var selected_total_count = 0;
+
+var last_stat = 0;
+var station_data = [10];
+var no_connected_stations = 0;
+var selected_counts = [10];
+var selected_new_counts = [10];
+for(var i; i<10; i++)
+{
+  selected_counts[i] = 0;
+  selected_new_counts[i] = 0;
+}
+
+var socket = io();
+socket.on('data', function (jdata)
+{
+  var data = JSON.parse(jdata);
+  last_stat = (new Date());
+  //console.log(data);
+    
+  switch(data.type)
+  {
+    case 'udprxbuffer':
+      var queue = data.head - data.tail;
+      if(queue < 0)
+      {
+        queue = queue + 1024;
+      }
+      $("#rx_buffer_queue").text(queue);
+      $("#rx_buffer_loss").text(data.loss);
+      break;
+      
+    case 'stations':
+      var selected_count = 0;
+      if(data.stations.length > 0)
+      {
+        if(no_connected_stations)
+        {
+          no_connected_stations = 0;
+          $("#rx_stations").empty();
+        }
+        for(var i=0; i<data.stations.length; i++)
+        {
+          if($("#rx_station_" + data.stations[i].id).length == 0)
+          {
+            $("#rx_stations").append(
+              $("<div></div")
+                  .attr('id',"rx_station_" + data.stations[i].id)
+            );
+          }
+          station_div = $("#rx_station_" + data.stations[i].id);
+          station_div.empty();
+          station_div.append(
+            $("<h4></h4>").text(data.stations[i].callsign),
+            $("<ul></ul>").append(
+              $("<li></li>").text("Connected since: "+dateStringFromEpoch(data.stations[i].connected)),
+              $("<li></li>").text("Last TS Packet: "+dateStringFromEpoch(data.stations[i].timestamp)),
+              $("<li></li>").text("Total TS Packets: "+data.stations[i].total_received),
+              $("<li></li>").text("Network Loss: "+data.stations[i].lost),
+              $("<li></li>").text("Selected: "+data.stations[i].selected)
+            )
+          );
+          station_data[i] = data.stations[i];
+          selected_counts[i] = selected_new_counts[i];
+          selected_new_counts[i] = data.stations[i].selected;
+          
+          selected_count = selected_count + data.stations[i].selected;
+        }
+      }
+      else
+      {
+        if(!no_connected_stations)
+        {
+          no_connected_stations = 1;
+          $("#rx_stations").empty();
+          $("#rx_stations").text("No stations connected.");
+        }
+      }
+      
+      /* Check if we can use relative selected count to quantify station contribution */
+      if(selected_count > selected_total_count)
+      {
+        selected_count_valid = 1;
+        $("#output_stations").empty();
+        for(var i=0;i<10;i++)
+        {
+          if(selected_new_counts[i] > selected_counts[i])
+          {
+            /* Selected count for this station has incremented, so it has a share */
+            var percentage = 100*(selected_new_counts[i] - selected_counts[i])
+                              / (selected_count - selected_total_count);
+            $("#output_stations").append(
+              $("<b></b>").text(station_data[i].callsign+": "),
+              $("<span></span>").text(percentage+"%")
+            );
+          }
+        }
+        selected_total_count = selected_count;
+      }
+      else
+      {
+        selected_count_valid = 0;
+        if($("#output_stations").length==1)
+        {
+          $("#output_stations").text("No stations streaming.");
+        }
+      }
+      break;
+      
+    case 'selection':
+      /* Only use if relative selected count gave us no information */
+      if(selected_count_valid==0)
+      {
+        $("#output_stations").empty();
+        /* If last packet was >2s ago, assume it's stale */
+        if(station_data[data.id].timestamp > (new Date() - 2000))
+        {
+          $("#output_stations").append(
+            $("<b></b>").text(data.callsign+": "),
+            $("<span></span>").text("100%")
+          );
+        }
+        else
+        {
+          $("#output_stations").text("No stations streaming.");
+        }
+      }
+      break;
+    
+    case 'threads':
+        var threads_list = $("<ul></ul>");
+        for(var i=0; i<data.threads.length; i++)
+        {
+            threads_list.append(
+                $("<li></li>").text(
+                    data.threads[i].name +
+                    ": "+
+                    data.threads[i].cpu_percent +
+                    "%"
+                )
+            );
+        }
+        $("#server_threads").empty();
+        $("#server_threads").append(threads_list);
+        break;
+      
+    default:
+      console.log("Unknown data type: "+data.type);
+      break;
+  }
+});
+
+function checkServer()
+{
+  if(last_stat > (new Date() - 2000))
+  {
+    $("#tsmerge_server").text("Running");
+  }
+  else if(last_stat > 0)
+  {
+    $("#tsmerge_server").text("Stopped");
+  }
+  setTimeout(checkServer, 100);
+}
+checkServer();
+
+function dateStringFromEpoch(epoch)
+{
+  var date = new Date(epoch);
+  return date.toDateString() + " " + date.toLocaleTimeString();
+}
+</script>
+</html>

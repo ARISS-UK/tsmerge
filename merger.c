@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <string.h>
 #include "merger.h"
+#include "timing.h"
+#include "viewer.h"
 
 #include <stdlib.h> /* testing only */
 
@@ -118,6 +120,12 @@ static void _reset_station(mx_t *s, int id, char sid[10], uint32_t counter)
 	/* Set the stream positions */
 	s->station[id].current = counter;
 	s->station[id].latest = counter;
+	
+	/* Set connection information */
+	s->station[id].connected = timestamp_ms();
+	s->station[id].counter_initial = counter;
+	s->station[id].total_received = 0;
+	s->station[id].selected = 0;
 }
 
 static int _lookup_station(mx_t *s, char sid[10])
@@ -271,6 +279,7 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 	}
 	
 	s->station[i].timestamp = timestamp;
+	s->station[i].total_received++;
 }
 
 int mx_update(mx_t *s, int64_t timestamp)
@@ -335,10 +344,32 @@ int mx_update(mx_t *s, int64_t timestamp)
 	s->next_station = best_station;
 	s->next_counter = s->station[s->next_station].right;
 	
+	/* Update station stats */
+	s->station[best_station].selected++;
+	
 	//printf("s->next_station = %d\n", s->next_station);
 	//printf("s->next_counter = %d\n", s->next_counter);
 	
 	return(1);
+}
+
+void *merger_mx(void* arg)
+{
+    (void) arg;
+	uint64_t timestamp;
+        
+    while(1)
+    {
+        /* Process any pending data */
+        pthread_mutex_lock(&merger.lock);
+        
+        timestamp = timestamp_ms();
+        while(mx_update(&merger, timestamp) > 0);
+        
+        pthread_mutex_unlock(&merger.lock);
+        
+        sleep_ms(5);
+    }
 }
 
 mx_packet_t *mx_next(mx_t *s, int last_station, uint32_t last_counter)

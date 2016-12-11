@@ -5,6 +5,16 @@
 #ifndef _MERGER_H
 #define _MERGER_H
 
+#include <pthread.h>
+
+#define MERGER_PCR_PID          256
+
+#define MERGER_UDP_RX_PORT          5678
+#define MERGER_UDP_RX_BUFSIZE       2048
+#define MERGER_UDP_RX_SYSBUFSIZE    212992
+
+#define MERGER_TCP_TX_PORT      5679
+
 /* Maximum number of stations and packets */
 #define _STATIONS 8
 #define _PACKETS  UINT16_MAX
@@ -16,7 +26,7 @@
 #define _GUARD_MS 1000
 
 /* Length of MX packet */
-#define MX_PACKET_LEN (0x20 + TS_PACKET_SIZE)
+#define MX_PACKET_LEN (0x10 + TS_PACKET_SIZE)
 
 /* Packet structure: (little endian)
  *
@@ -62,8 +72,20 @@ typedef struct {
 	/* The current position in the stream */
 	uint32_t current;
 	
-	/* The latest position in the stream */
+	/* The latest position counter value from this station */
 	uint32_t latest;
+	
+	/* Timestamp when the station connected */
+	int64_t connected;
+	
+	/* Counter when the station connected */
+	uint32_t counter_initial;
+	
+	/* Total packets received (to allow net loss calculation) */
+	uint32_t total_received;
+	
+	/* Number of times the station has been selected as best */
+	uint32_t selected;
 	
 	/* The receive time of the last packet (in ms) */
 	int64_t timestamp;
@@ -92,7 +114,15 @@ typedef struct {
 	/* The station array */
 	mx_station_t station[_STATIONS];
 	
+	/* Big Fat Lock TODO: Don't do this */
+	pthread_mutex_t lock;
+	
 } mx_t;
+
+/* the TS merger state */
+mx_t merger;
+
+void *merger_mx(void*);
 
 extern void mx_init(mx_t *s, uint16_t pcr_pid);
 extern void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data);
