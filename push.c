@@ -7,6 +7,7 @@
 /* the Free Software Foundation, either version 3 of the License, or     */
 /* (at your option) any later version.                                   */
 
+#include <time.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -17,6 +18,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <signal.h>
 #include "ts.h"
 
 typedef enum {
@@ -108,24 +110,145 @@ void _print_usage(void)
 		"                         Default: mx\n"
 		"  -c, --callsign <id>    Set the station callsign, up to 10 characters.\n"
 		"                         Required for mx mode. Not used by ts mode.\n"
+		"  -b, --bitrate <number> Set the desired output bitrate (accurate for 204-byte input only)\n"
 		"\n"
 	);
 }
 
+
+int sock;
+uint8_t data[0x10 + TS_PACKET_SIZE];
+_mode_t mode;
+FILE *f;
+int r;
+int c;
+ts_header_t ts;
+uint32_t counter;
+
+static uint8_t stream_finished;
+static void _send_packet(int sig)
+{
+    /* Send 1 data packet */
+	if(fread(&data[0x10], 1, TS_PACKET_SIZE, f) == TS_PACKET_SIZE)
+	{
+        /* Re-enable signal handler */
+        signal(SIGALRM, _send_packet);
+        
+        if(data[0x10] != TS_HEADER_SYNC)
+	    {
+		    /* Re-align input to the TS sync byte */
+		    uint8_t *p = memchr(&data[0x10], TS_HEADER_SYNC, TS_PACKET_SIZE);
+		    if(p == NULL) return;
+		
+		    c = p - &data[0x10];
+		    memmove(&data[0x10], p, TS_PACKET_SIZE - c);
+		
+		    if(fread(&data[0x10 + TS_PACKET_SIZE - c], 1, c, f) != c)
+		    {
+			    return;
+		    }
+	    }
+	
+	    if(ts_parse_header(&ts, &data[0x10]) != TS_OK)
+	    {
+		    /* Don't transmit packets with invalid headers */
+		    printf("TS_INVALID\n");
+		    return;
+	    }
+	
+	    /* We don't transmit NULL/padding packets */
+	    if(ts.pid == TS_NULL_PID) return;
+	
+	    /* Counter (4 bytes little-endian) */
+	    data[0x05] = (counter & 0xFF000000) >> 24;
+	    data[0x04] = (counter & 0x00FF0000) >> 16;
+	    data[0x03] = (counter & 0x0000FF00) >>  8;
+	    data[0x02] = (counter & 0x000000FF) >>  0;
+	
+	    if(mode == MODE_MX)
+	    {
+		    /* Send the full MX packet */
+		    send(sock, data, sizeof(data), 0);
+	    }
+	    else if(mode == MODE_TS)
+	    {
+		    /* Send just the TS packet */
+		    send(sock, &data[0x10], TS_PACKET_SIZE, 0);
+	    }
+	
+	    counter++;
+	}
+	else
+	{
+        /* Signal main process to exit */
+	    stream_finished = 1;
+    }
+}
+
+static void _stream_data(void)
+{
+    /* Stream the data */
+	while(fread(&data[0x10], 1, TS_PACKET_SIZE, f) == TS_PACKET_SIZE)
+	{
+       if(data[0x10] != TS_HEADER_SYNC)
+	    {
+		    /* Re-align input to the TS sync byte */
+		    uint8_t *p = memchr(&data[0x10], TS_HEADER_SYNC, TS_PACKET_SIZE);
+		    if(p == NULL) continue;
+		
+		    c = p - &data[0x10];
+		    memmove(&data[0x10], p, TS_PACKET_SIZE - c);
+		
+		    if(fread(&data[0x10 + TS_PACKET_SIZE - c], 1, c, f) != c)
+		    {
+			    break;
+		    }
+	    }
+	
+	    if(ts_parse_header(&ts, &data[0x10]) != TS_OK)
+	    {
+		    /* Don't transmit packets with invalid headers */
+		    printf("TS_INVALID\n");
+		    continue;
+	    }
+	
+	    /* We don't transmit NULL/padding packets */
+	    if(ts.pid == TS_NULL_PID) continue;
+	
+	    /* Counter (4 bytes little-endian) */
+	    data[0x05] = (counter & 0xFF000000) >> 24;
+	    data[0x04] = (counter & 0x00FF0000) >> 16;
+	    data[0x03] = (counter & 0x0000FF00) >>  8;
+	    data[0x02] = (counter & 0x000000FF) >>  0;
+	
+	    if(mode == MODE_MX)
+	    {
+		    /* Send the full MX packet */
+		    send(sock, data, sizeof(data), 0);
+	    }
+	    else if(mode == MODE_TS)
+	    {
+		    /* Send just the TS packet */
+		    send(sock, &data[0x10], TS_PACKET_SIZE, 0);
+	    }
+	
+	    counter++;
+	}
+}
+
 int main(int argc, char *argv[])
 {
-	int c;
 	int opt;
-	int sock;
-	uint32_t counter = 0;
 	char *host = "localhost";
 	char *port = "5678";
 	char *callsign = NULL;
+	int bitrate = 0;
+	int packet_delay_us;
 	int ai_family = AF_UNSPEC;
-	_mode_t mode = MODE_MX;
-	FILE *f = stdin;
-	uint8_t data[16 + TS_PACKET_SIZE];
-	ts_header_t ts;
+	
+	counter = 0;
+	mode = MODE_MX;
+	f = stdin;
 	
 	static const struct option long_options[] = {
 		{ "host",        required_argument, 0, 'h' },
@@ -134,11 +257,12 @@ int main(int argc, char *argv[])
 		{ "ipv4",        no_argument,       0, '4' },
 		{ "callsign",    required_argument, 0, 'c' },
 		{ "mode",        required_argument, 0, 'm' },
+		{ "bitrate",     required_argument, 0, 'b' },
 		{ 0,             0,                 0,  0  }
 	};
 	
 	opterr = 0;
-	while((c = getopt_long(argc, argv, "h:p:64c:", long_options, &opt)) != -1)
+	while((c = getopt_long(argc, argv, "h:p:64c:b:", long_options, &opt)) != -1)
 	{
 		switch(c)
 		{
@@ -178,6 +302,10 @@ int main(int argc, char *argv[])
 		
 		case 'c': /* --callsign <id> */
 			callsign = optarg;
+			break;
+		
+		case 'b': /* --bitrate <number> */
+			bitrate = atoi(optarg);
 			break;
 		
 		case '?':
@@ -239,52 +367,28 @@ int main(int argc, char *argv[])
 		strncpy((char *) &data[0x06], callsign, 10);
 	}
 	
-	/* Stream the data */
-	while(fread(&data[0x10], 1, TS_PACKET_SIZE, f) == TS_PACKET_SIZE)
+	if(bitrate == 0)
 	{
-		if(data[0x10] != TS_HEADER_SYNC)
-		{
-			/* Re-align input to the TS sync byte */
-			uint8_t *p = memchr(&data[0x10], TS_HEADER_SYNC, TS_PACKET_SIZE);
-			if(p == NULL) continue;
-			
-			c = p - &data[0x10];
-			memmove(&data[0x10], p, TS_PACKET_SIZE - c);
-			
-			if(fread(&data[0x10 + TS_PACKET_SIZE - c], 1, c, f) != c)
-			{
-				break;
-			}
-		}
-		
-		if(ts_parse_header(&ts, &data[0x10]) != TS_OK)
-		{
-			/* Don't transmit packets with invalid headers */
-			printf("TS_INVALID\n");
-			continue;
-		}
-		
-		/* We don't transmit NULL/padding packets */
-		if(ts.pid == TS_NULL_PID) continue;
-		
-		/* Counter (4 bytes little-endian) */
-		data[0x05] = (counter & 0xFF000000) >> 24;
-		data[0x04] = (counter & 0x00FF0000) >> 16;
-		data[0x03] = (counter & 0x0000FF00) >>  8;
-		data[0x02] = (counter & 0x000000FF) >>  0;
-		
-		if(mode == MODE_MX)
-		{
-			/* Send the full MX packet */
-			send(sock, data, sizeof(data), 0);
-		}
-		else if(mode == MODE_TS)
-		{
-			/* Send just the TS packet */
-			send(sock, &data[0x10], TS_PACKET_SIZE, 0);
-		}
-		
-		counter++;
+	    /* Default mode, stream it as we get it */
+	    _stream_data();
+	}
+	else
+	{
+	    /* Assume 204-byte input packets */
+	    packet_delay_us = 1000000 / (bitrate/(TS_PACKET_SIZE*8));
+	    
+	    /* On SIGALRM, run _send_packet() */
+	    stream_finished = 0;
+	    signal(SIGALRM, _send_packet);
+	    
+	    /* Send a SIGALRM after packet_delay_us microseconds, and
+	     * at intervals of every packet_delay_us microseconds thereafter */
+	    ualarm (packet_delay_us, packet_delay_us);
+	    
+	    while(!stream_finished)
+	    {
+	        sleep(10);
+	    }
 	}
 	
 	if(f != stdin)
