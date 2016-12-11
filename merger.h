@@ -71,8 +71,20 @@ typedef struct {
 	/* The current position in the stream */
 	uint32_t current;
 	
-	/* The latest position in the stream */
+	/* The latest position counter value from this station */
 	uint32_t latest;
+	
+	/* Timestamp when the station connected */
+	int64_t connected;
+	
+	/* Counter when the station connected */
+	uint32_t counter_initial;
+	
+	/* Total packets received (to allow net loss calculation) */
+	uint32_t total_received;
+	
+	/* Number of times the station has been selected as best */
+	uint32_t selected;
 	
 	/* The receive time of the last packet (in ms) */
 	int64_t timestamp;

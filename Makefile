@@ -8,6 +8,7 @@ TSMERGE_SRCS = main.c \
                 ts.c \
                 timing.c \
                 merger.c \
+                merger_stats.c \
                 merger_rx_feed.c \
                 merger_rx_socket.c \
                 merger_tx_feed.c \

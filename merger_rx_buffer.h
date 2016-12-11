@@ -24,6 +24,8 @@ typedef struct
     pthread_cond_t Signal;
     /* Head and Tail Indexes */
     uint16_t Head, Tail;
+    /* Data Loss Counter */
+    uint16_t Loss;
     /* Data */
     rxBufferElement_t Buffer[RX_BUFFER_LENGTH];
 } rxBuffer_t;
@@ -33,6 +35,7 @@ void rxBufferInit(void *buffer_void_ptr);
 uint8_t rxBufferNotEmpty(void *buffer_void_ptr);
 uint16_t rxBufferHead(void *buffer_void_ptr);
 uint16_t rxBufferTail(void *buffer_void_ptr);
+uint16_t rxBufferLoss(void *buffer_void_ptr);
 void rxBufferPush(void *buffer_void_ptr, uint64_t timestamp, uint8_t *data_p);
 void rxBufferPop(void *buffer_void_ptr, rxBufferElement_t *rxBufferElementPtr);
 void rxBufferWaitPop(void *buffer_void_ptr, rxBufferElement_t *rxBufferElementPtr);

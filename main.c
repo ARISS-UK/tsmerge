@@ -17,6 +17,7 @@
 #include "timing.h"
 #include "viewer.h"
 #include "merger.h"
+#include "merger_stats.h"
 #include "merger_rx_buffer.h"
 #include "merger_rx_socket.h"
 #include "merger_rx_feed.h"
@@ -27,13 +28,14 @@ rxBuffer_t rxBuffer;
 
 /* Declare threads */
 /** { [pthread_t], name[64], function, arg, last_cpu, last_cpu_t } **/
-#define MX_THREAD_NUMBER    5
+#define MX_THREAD_NUMBER   6
 mx_thread_t mx_threads[MX_THREAD_NUMBER] = {
     { 0, "TCP TX Socket    ", merger_tx_socket, NULL,      0, 0 },
     { 0, "MX => TCP TX Feed", merger_tx_feed,   NULL,      0, 0 },
     { 0, "MX Loop          ", merger_mx,        NULL,      0, 0 },
     { 0, "UDP RX => MX Feed", merger_rx_feed,   &rxBuffer, 0, 0 },
-    { 0, "UDP RX Socket    ", merger_rx_socket, &rxBuffer, 0, 0 }
+    { 0, "UDP RX Socket    ", merger_rx_socket, &rxBuffer, 0, 0 },
+    { 0, "Stats Collection ", merger_stats,     NULL,      0, 0 }
 };
 
 int main(int argc, char *argv[])
@@ -84,13 +86,6 @@ int main(int argc, char *argv[])
 	        mx_threads[i].last_cpu_ts = timestamp_tmp;
 	        mx_threads[i].last_cpu = cpu_time_tmp;
 	    }
-	    
-	    /* Print head & tail of RX Buffer to see queuing */
-	    printf("\nRX Buffer: \n");
-	    printf(" Head: %d, Tail: %d\n",
-	        rxBufferHead(&rxBuffer),
-	        rxBufferTail(&rxBuffer)
-	    );
 	    
 	    sleep_ms(3*1000);
 	}

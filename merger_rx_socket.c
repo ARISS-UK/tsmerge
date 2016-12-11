@@ -44,10 +44,16 @@ void *merger_rx_socket(void *Buffer_void_ptr)
 
   /* Add REUSEADDR Flag (TODO: Check if needed) */
   optval = 1;
-  setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));
+  n = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));
+	if(n < 0)
+	{
+		fprintf(stderr, "Incoming socket failed to set SO_REUSEADDR");
+		close(sockfd);
+		return NULL;
+	}
   
   /* Set the RX buffer length */
-	optval = 65535;
+	optval = 212992;
 	n = setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &optval, sizeof(optval));
 	if(n < 0)
 	{
@@ -66,32 +72,32 @@ void *merger_rx_socket(void *Buffer_void_ptr)
   if (bind(sockfd, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) < 0)
   { 
     fprintf(stderr, "Incoming socket failed to bind\n");
+    return NULL;
   }
   
   /* Infinite loop, blocks until incoming packet */
   while (1)
-  {    
+  {   
     /* Block here until we receive a packet */
 	  n = recv(sockfd, buf, MERGER_UDP_RX_BUFSIZE, 0);
     if (n < 0)
     {
       fprintf(stderr, "Incoming recv failed\n");
+      continue;
     }
     
     if(n % MX_PACKET_LEN != 0)
 	  {
 		  fprintf(stderr, "Incoming packet invalid size, expected a multiple of 204 bytes, got %d\n", n);
-		  return(0);
+		  continue;
 	  }
 	  
 		timestamp = timestamp_ms();
-
-    //printf("Incoming packet received of %d bytes.\n", n);
     
     /* Feed in the packet(s) */
     for(i = 0; i < n; i += MX_PACKET_LEN)
     {
-      rxBufferPush(rxBufPtr, timestamp, &buf[i]);
+      rxBufferPush(rxBufPtr, timestamp, &buf[i]);	    
     }
   }
 }
