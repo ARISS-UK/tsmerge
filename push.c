@@ -26,6 +26,26 @@ typedef enum {
 	MODE_TS,
 } _mode_t;
 
+typedef struct {
+    /* Input file descriptor */
+    FILE *input_fd;
+    
+    /* Output UDP Socket */
+    int output_socket;
+    
+    /* Output Mode (MX/TS) */
+    _mode_t output_mode;
+    
+    /* Output packet counter */
+    uint32_t output_counter;
+    
+    /* TS Packet Data buffer */
+    uint8_t data[0x10 + TS_PACKET_SIZE];
+    
+} _push_t;
+
+_push_t tspush;
+
 static int _open_socket(char *host, char *port, int ai_family)
 {
 	int r;
@@ -115,140 +135,103 @@ void _print_usage(void)
 	);
 }
 
-
-int sock;
-uint8_t data[0x10 + TS_PACKET_SIZE];
-_mode_t mode;
-FILE *f;
-int r;
-int c;
-ts_header_t ts;
-uint32_t counter;
-
-static uint8_t stream_finished;
-static void _send_packet(int sig)
+static uint8_t _send_packet(void)
 {
-    /* Send 1 data packet */
-	if(fread(&data[0x10], 1, TS_PACKET_SIZE, f) == TS_PACKET_SIZE)
-	{
-        /* Re-enable signal handler */
-        signal(SIGALRM, _send_packet);
+    int c;
+    ts_header_t ts;
+    
+    if(fread(&tspush.data[0x10], 1, TS_PACKET_SIZE, tspush.input_fd) == TS_PACKET_SIZE)
+    {
+        if(tspush.data[0x10] != TS_HEADER_SYNC)
+        {
+	        /* Re-align input to the TS sync byte */
+	        uint8_t *p = memchr(&tspush.data[0x10], TS_HEADER_SYNC, TS_PACKET_SIZE);
+	        if(p == NULL) return 1;
+	
+	        c = p - &tspush.data[0x10];
+	        memmove(&tspush.data[0x10], p, TS_PACKET_SIZE - c);
+	
+	        if(fread(&tspush.data[0x10 + TS_PACKET_SIZE - c], 1, c, tspush.input_fd) != c)
+	        {
+		        return 0;
+	        }
+        }
+
+        if(ts_parse_header(&ts, &tspush.data[0x10]) != TS_OK)
+        {
+	        /* Don't transmit packets with invalid headers */
+	        printf("TS_INVALID\n");
+	        return 1;
+        }
+
+        /* We don't transmit NULL/padding packets */
+        if(ts.pid == TS_NULL_PID) return 1;
+
+        /* Counter (4 bytes little-endian) */
+        tspush.data[0x05] = (tspush.output_counter & 0xFF000000) >> 24;
+        tspush.data[0x04] = (tspush.output_counter & 0x00FF0000) >> 16;
+        tspush.data[0x03] = (tspush.output_counter & 0x0000FF00) >>  8;
+        tspush.data[0x02] = (tspush.output_counter & 0x000000FF) >>  0;
+
+        if(tspush.output_mode == MODE_MX)
+        {
+	        /* Send the full MX packet */
+	        send(tspush.output_socket, tspush.data, sizeof(tspush.data), 0);
+        }
+        else if(tspush.output_mode == MODE_TS)
+        {
+	        /* Send just the TS packet */
+	        send(tspush.output_socket, &tspush.data[0x10], TS_PACKET_SIZE, 0);
+        }
+
+        tspush.output_counter++;
         
-        if(data[0x10] != TS_HEADER_SYNC)
-	    {
-		    /* Re-align input to the TS sync byte */
-		    uint8_t *p = memchr(&data[0x10], TS_HEADER_SYNC, TS_PACKET_SIZE);
-		    if(p == NULL) return;
-		
-		    c = p - &data[0x10];
-		    memmove(&data[0x10], p, TS_PACKET_SIZE - c);
-		
-		    if(fread(&data[0x10 + TS_PACKET_SIZE - c], 1, c, f) != c)
-		    {
-			    return;
-		    }
-	    }
-	
-	    if(ts_parse_header(&ts, &data[0x10]) != TS_OK)
-	    {
-		    /* Don't transmit packets with invalid headers */
-		    printf("TS_INVALID\n");
-		    return;
-	    }
-	
-	    /* We don't transmit NULL/padding packets */
-	    if(ts.pid == TS_NULL_PID) return;
-	
-	    /* Counter (4 bytes little-endian) */
-	    data[0x05] = (counter & 0xFF000000) >> 24;
-	    data[0x04] = (counter & 0x00FF0000) >> 16;
-	    data[0x03] = (counter & 0x0000FF00) >>  8;
-	    data[0x02] = (counter & 0x000000FF) >>  0;
-	
-	    if(mode == MODE_MX)
-	    {
-		    /* Send the full MX packet */
-		    send(sock, data, sizeof(data), 0);
-	    }
-	    else if(mode == MODE_TS)
-	    {
-		    /* Send just the TS packet */
-		    send(sock, &data[0x10], TS_PACKET_SIZE, 0);
-	    }
-	
-	    counter++;
-	}
-	else
-	{
-        /* Signal main process to exit */
-	    stream_finished = 1;
+        return 1;
+    }
+    else
+    {
+        return 0;
     }
 }
 
-static void _stream_data(void)
+static void _handle_alarm(int sig)
 {
-    /* Stream the data */
-	while(fread(&data[0x10], 1, TS_PACKET_SIZE, f) == TS_PACKET_SIZE)
-	{
-       if(data[0x10] != TS_HEADER_SYNC)
-	    {
-		    /* Re-align input to the TS sync byte */
-		    uint8_t *p = memchr(&data[0x10], TS_HEADER_SYNC, TS_PACKET_SIZE);
-		    if(p == NULL) continue;
-		
-		    c = p - &data[0x10];
-		    memmove(&data[0x10], p, TS_PACKET_SIZE - c);
-		
-		    if(fread(&data[0x10 + TS_PACKET_SIZE - c], 1, c, f) != c)
-		    {
-			    break;
-		    }
-	    }
-	
-	    if(ts_parse_header(&ts, &data[0x10]) != TS_OK)
-	    {
-		    /* Don't transmit packets with invalid headers */
-		    printf("TS_INVALID\n");
-		    continue;
-	    }
-	
-	    /* We don't transmit NULL/padding packets */
-	    if(ts.pid == TS_NULL_PID) continue;
-	
-	    /* Counter (4 bytes little-endian) */
-	    data[0x05] = (counter & 0xFF000000) >> 24;
-	    data[0x04] = (counter & 0x00FF0000) >> 16;
-	    data[0x03] = (counter & 0x0000FF00) >>  8;
-	    data[0x02] = (counter & 0x000000FF) >>  0;
-	
-	    if(mode == MODE_MX)
-	    {
-		    /* Send the full MX packet */
-		    send(sock, data, sizeof(data), 0);
-	    }
-	    else if(mode == MODE_TS)
-	    {
-		    /* Send just the TS packet */
-		    send(sock, &data[0x10], TS_PACKET_SIZE, 0);
-	    }
-	
-	    counter++;
+    /* Send 1 data packet */
+    if(_send_packet())
+    {
+        /* Successful, se re-enable alarm handler */
+        signal(SIGALRM, _handle_alarm);
 	}
+	else
+	{
+	    /* Failed, likely EOF, so close sockets */
+	    if(tspush.input_fd != stdin)
+	    {
+		    fclose(tspush.input_fd);
+	    }
+	    
+	    close(tspush.output_socket);
+	    
+	    /* Main function will trigger on sock !> 0 and terminate */
+	    tspush.output_socket = 0;
+    }
 }
 
 int main(int argc, char *argv[])
 {
 	int opt;
+	int c;
 	char *host = "localhost";
 	char *port = "5678";
 	char *callsign = NULL;
-	int bitrate = 0;
-	int packet_delay_us;
 	int ai_family = AF_UNSPEC;
 	
-	counter = 0;
-	mode = MODE_MX;
-	f = stdin;
+	int bitrate = 0;
+	int packet_delay_us;
+	
+	tspush.input_fd = stdin;
+	tspush.output_mode = MODE_MX;
+	tspush.output_counter = 0;
 	
 	static const struct option long_options[] = {
 		{ "host",        required_argument, 0, 'h' },
@@ -285,11 +268,11 @@ int main(int argc, char *argv[])
 		case 'm': /* --mode <ts|mx> */
 			if(strcmp(optarg, "ts") == 0)
 			{
-				mode = MODE_TS;
+				tspush.output_mode = MODE_TS;
 			}
 			else if(strcmp(optarg, "mx") == 0)
 			{
-				mode = MODE_MX;
+				tspush.output_mode = MODE_MX;
 			}
 			else
 			{
@@ -314,7 +297,8 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	if(mode == MODE_MX)
+	/* If output mode is specified */
+	if(tspush.output_mode == MODE_MX)
 	{
 		if(callsign == NULL)
 		{
@@ -330,15 +314,16 @@ int main(int argc, char *argv[])
 		}
 	}
 	
+	/* If input file is specified */
 	if(argc - optind == 1)
 	{
-		f = fopen(argv[optind], "rb");
-		if(!f)
+		tspush.input_fd = fopen(argv[optind], "rb");
+		if(!tspush.input_fd)
 		{
 			perror("fopen");
 			return(-1);
 		}
-        }
+    }
 	else if(argc - optind > 1)
 	{
 		printf("Error: More than one input file specified\n");
@@ -347,30 +332,37 @@ int main(int argc, char *argv[])
 	}
 	
 	/* Open the outgoing socket */
-	sock = _open_socket(host, port, ai_family);
-	if(sock == -1)
+	tspush.output_socket = _open_socket(host, port, ai_family);
+	if(tspush.output_socket == -1)
 	{
 		printf("Failed to resolve %s\n", host);
 		return(-1);
 	}
 	
 	/* Initialise the header */
-	memset(data, 0, sizeof(data));
+	memset(tspush.data, 0, sizeof(tspush.data));
 	
 	/* Packet ID / type */
-	data[0x00] = 0xA1;
-	data[0x01] = 0x55;
+	tspush.data[0x00] = 0xA1;
+	tspush.data[0x01] = 0x55;
 	
 	/* Station ID (10 bytes, UTF-8) */
 	if(callsign != NULL)
 	{
-		strncpy((char *) &data[0x06], callsign, 10);
+		strncpy((char *) &tspush.data[0x06], callsign, 10);
 	}
 	
 	if(bitrate == 0)
 	{
-	    /* Default mode, stream it as we get it */
-	    _stream_data();
+	    /* Stream the data until fails, likely due to EOF */
+        while(_send_packet()) {};
+	
+	    /* then close sockets */
+	    if(tspush.input_fd != stdin)
+        {
+	        fclose(tspush.input_fd);
+        }
+        close(tspush.output_socket);
 	}
 	else
 	{
@@ -378,25 +370,18 @@ int main(int argc, char *argv[])
 	    packet_delay_us = 1000000 / (bitrate/(TS_PACKET_SIZE*8));
 	    
 	    /* On SIGALRM, run _send_packet() */
-	    stream_finished = 0;
-	    signal(SIGALRM, _send_packet);
+	    signal(SIGALRM, _handle_alarm);
 	    
 	    /* Send a SIGALRM after packet_delay_us microseconds, and
 	     * at intervals of every packet_delay_us microseconds thereafter */
 	    ualarm (packet_delay_us, packet_delay_us);
 	    
-	    while(!stream_finished)
+	    /* Loop main function until output socket is closed by signal handler */
+	    while(tspush.output_socket > 0)
 	    {
 	        sleep(10);
 	    }
 	}
-	
-	if(f != stdin)
-	{
-		fclose(f);
-	}
-	
-	close(sock);
 	
 	return(0);
 }
