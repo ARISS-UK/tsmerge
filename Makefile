@@ -25,9 +25,13 @@ TSPUSH_SRCS = push.c \
 TSINFO_BIN = tsinfo
 TSINFO_SRCS = info.c \
                 ts.c
+
+TSSIM_BIN = tssim
+TSSIM_SRCS = sim.c \
+                ts.c
                 
 
-TARGETS = $(TSMERGE_BIN) $(TSPUSH_BIN) $(TSINFO_BIN)
+TARGETS = $(TSMERGE_BIN) $(TSPUSH_BIN) $(TSINFO_BIN) $(TSSIM_BIN)
 
 all: $(TARGETS)
 
@@ -39,6 +43,9 @@ tspush:
 
 tsinfo:
 	$(CC) $(CFLAGS) $(TSINFO_SRCS) -o $(TSINFO_BIN) $(LDFLAGS)
+
+tssim:
+	$(CC) $(CFLAGS) $(TSSIM_SRCS) -o $(TSSIM_BIN) $(LDFLAGS)
 
 clean:
 	rm -fv *.o $(TARGETS)

@@ -1,5 +1,6 @@
 tspush
 tsmerge
 tsinfo
+tssim
 *.o
 *.ts
