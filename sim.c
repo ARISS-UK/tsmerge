@@ -22,11 +22,6 @@
 #include "ts.h"
 #include "sim.h"
 
-/* Set additional likelihood multiplier that station will remain in on/off state */
-/* ie. 0.0 is fair, 1.0 will never change */
-#define STICKINESS 0.0
-
-
 #define SIM_STATIONS_NUMBER   3
 _sim_station_t sim_stations[SIM_STATIONS_NUMBER];
 _push_t sim_a_tspush;
@@ -193,7 +188,6 @@ static void _handle_alarm(int sig)
     }
     
     signal(SIGALRM, _handle_alarm);
-    //printf("%ld\n",global_clock);
     global_clock++;
 }
 
@@ -287,23 +281,21 @@ int main(int argc, char *argv[])
         }
 	    data_ptr += TS_PACKET_SIZE;
 	}
-    /* Read all data in, and then close the file */
-    //fread(input_data, input_length, 1, input_fd);
+    /* then close the file */
     fclose(input_fd);
     
     /* Set up sim stations */
     
     /** { callsign[10],
-            latency_offset_ms, latency_variance_ms,
+            latency_offset_ms [ms], latency_variance_ms [ms],
             dropout_interval [packets], dropout_length [packets],
-            last_good [0], counter [0],
+            counter [default: 0],
             [tspush] } **/
     sim_stations[0] = (_sim_station_t){ "SIM_A",  20,10, 3000,900, 0, sim_a_tspush };
-    sim_stations[1] = (_sim_station_t){ "SIM_B",  40,20, 7000,900, 0, sim_b_tspush };
-    sim_stations[2] = (_sim_station_t){ "SIM_C",  60,20, 11000,900, 0, sim_c_tspush };
+    sim_stations[1] = (_sim_station_t){ "SIM_B",  40,20, 5000,900, 0, sim_b_tspush };
+    sim_stations[2] = (_sim_station_t){ "SIM_C",  60,20, 7000,900, 0, sim_c_tspush };
     
     global_clock = 0;
-    srand(time(NULL));
 
     /* Set up simulated stations */
     for(i=0;i<SIM_STATIONS_NUMBER;i++)
