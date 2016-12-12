@@ -357,7 +357,13 @@ void *merger_mx(void* arg)
 {
     (void) arg;
 	uint64_t timestamp;
-        
+    
+    /* TODO: Trigger mx_update() via a signal or condition var (only),
+     * when mx_feed() adds a new PCR packet for a station (ie. completing a new segment) */
+    /* Passing the station id as well would remove the need to loop over all stations
+     * as it would only need to compare the current versus the new one,
+     * for being either newer or less lossy. */
+    
     while(1)
     {
         /* Process any pending data */
