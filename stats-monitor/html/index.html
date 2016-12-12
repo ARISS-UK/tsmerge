@@ -151,7 +151,8 @@ socket.on('data', function (jdata)
         {
           $("#output_stations").append(
             $("<b></b>").text(data.callsign+": "),
-            $("<span></span>").text("100%")
+            $("<span></span>").text("100%"),
+            $("<br></br>")
           );
         }
         else
