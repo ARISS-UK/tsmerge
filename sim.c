@@ -22,11 +22,11 @@
 #include "ts.h"
 #include "sim.h"
 
-#define SIM_STATIONS_NUMBER   3
+#define SIM_STATIONS_NUMBER   2
 _sim_station_t sim_stations[SIM_STATIONS_NUMBER];
 _push_t sim_a_tspush;
 _push_t sim_b_tspush;
-_push_t sim_c_tspush;
+//_push_t sim_c_tspush;
 
 int64_t global_clock;
 uint8_t *input_data;
@@ -120,7 +120,7 @@ static uint8_t _send_packet(_sim_station_t *sta)
     ts_header_t ts;
     
     /* Load next packet from input */
-    if(memcpy(&sta->tspush.data[0x10], &input_data[sta->counter], TS_PACKET_SIZE))
+    if(memcpy(&sta->tspush.data[0x10], &input_data[sta->counter*TS_PACKET_SIZE], TS_PACKET_SIZE))
     {
         if(ts_parse_header(&ts, &sta->tspush.data[0x10]) != TS_OK)
         {
@@ -160,12 +160,12 @@ static void _handle_alarm(int sig)
         if(sim_stations[i].counter == input_length) continue;
         
         /* Check if this station is due another packet by it's latency */
-        if((global_clock*TS_PACKET_SIZE) > (sim_stations[i].counter + sim_stations[i].latency_offset_ms + (rand() % sim_stations[i].latency_variance_ms)))
+        if(global_clock > (sim_stations[i].counter + sim_stations[i].latency_offset_ms + (rand() % sim_stations[i].latency_variance_ms)))
         {
-            sim_stations[i].counter += TS_PACKET_SIZE;
+            sim_stations[i].counter++;
             
             /* Check if it's due to drop out */
-            if((global_clock % sim_stations[i].dropout_interval) < sim_stations[i].dropout_length)
+            if((global_clock > sim_stations[i].dropout_interval) && ((global_clock % sim_stations[i].dropout_interval) < sim_stations[i].dropout_length))
             {
                 /* Drop out! (no data sent) */
             }
@@ -291,11 +291,11 @@ int main(int argc, char *argv[])
             dropout_interval [packets], dropout_length [packets],
             counter [default: 0],
             [tspush] } **/
-    sim_stations[0] = (_sim_station_t){ "SIM_A",  20,10, 3000,900, 0, sim_a_tspush };
-    sim_stations[1] = (_sim_station_t){ "SIM_B",  40,20, 5000,900, 0, sim_b_tspush };
-    sim_stations[2] = (_sim_station_t){ "SIM_C",  60,20, 7000,900, 0, sim_c_tspush };
+    sim_stations[0] = (_sim_station_t){ "SIM_A",  1,1, 20000,10000, 0, sim_a_tspush };
+    sim_stations[1] = (_sim_station_t){ "SIM_B",  1,1, 900000,900, 0, sim_b_tspush };
+    //sim_stations[2] = (_sim_station_t){ "SIM_C",  60,20, 70000,9000, 0, sim_c_tspush };
     
-    global_clock = 0;
+    global_clock = 1;
 
     /* Set up simulated stations */
     for(i=0;i<SIM_STATIONS_NUMBER;i++)
