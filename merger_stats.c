@@ -143,19 +143,22 @@ static void stats_threads(void)
     timestamp_tmp = timestamp_ms();
     cpu_time_tmp = thread_timestamp(mx_threads[i].thread);
     
-    if(i!=0)
+    if((timestamp_tmp - mx_threads[i].last_cpu_ts) > 0)
     {
-      /* Comma seperation */
-      sprintf(tmpString,"%s,",tmpString);
+        if(i!=0)
+        {
+          /* Comma seperation */
+          sprintf(tmpString,"%s,",tmpString);
+        }
+        
+        sprintf(tmpString,"%s{\"id\":%d,\"name\":\"%s\",\"cpu_percent\":%.2f}",
+          tmpString,
+          i,
+          mx_threads[i].name,
+          100*(double)(cpu_time_tmp - mx_threads[i].last_cpu)
+                / (timestamp_tmp - mx_threads[i].last_cpu_ts)
+        );
     }
-    
-    sprintf(tmpString,"%s{\"id\":%d,\"name\":\"%s\",\"cpu_percent\":%.2f}",
-      tmpString,
-      i,
-      mx_threads[i].name,
-      100*(double)(cpu_time_tmp - mx_threads[i].last_cpu)
-            / (timestamp_tmp - mx_threads[i].last_cpu_ts)
-    );
     
     mx_threads[i].last_cpu_ts = timestamp_tmp;
     mx_threads[i].last_cpu = cpu_time_tmp;

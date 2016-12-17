@@ -291,8 +291,8 @@ int main(int argc, char *argv[])
             dropout_interval [packets], dropout_length [packets],
             counter [default: 0],
             [tspush] } **/
-    sim_stations[0] = (_sim_station_t){ "SIM_A",  1,1, 20000,10000, 0, sim_a_tspush };
-    sim_stations[1] = (_sim_station_t){ "SIM_B",  1,1, 900000,900, 0, sim_b_tspush };
+    sim_stations[0] = (_sim_station_t){ "SIM_A",  10,10, 20000,10000, 0, sim_a_tspush };
+    sim_stations[1] = (_sim_station_t){ "SIM_B",  50,20, 900000,900, 0, sim_b_tspush };
     //sim_stations[2] = (_sim_station_t){ "SIM_C",  60,20, 70000,9000, 0, sim_c_tspush };
     
     global_clock = 1;

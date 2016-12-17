@@ -14,6 +14,7 @@ body {
 <h1>tsmerge</h1>
 
 <h2>Output Contribution</h2>
+<canvas id="output_stations_graph" width="500" height="100"></canvas>
 <div id="output_stations"></div>
 
 <h2>Connected Stations</h2>
@@ -29,6 +30,7 @@ RX Buffer Loss : <span id="rx_buffer_loss"></span> packets<br />
 </body>
 <script src="/libs/jquery-3.1.1.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
+<script src="/libs/smoothie.js"></script>
 <script>
 
 var selected_count_valid = 0;
@@ -45,12 +47,31 @@ for(var i; i<10; i++)
   selected_new_counts[i] = 0;
 }
 
+
+/* Hardcoded for 4x stations (TODO: Dynamic) */
+var station_contrib_data = [new TimeSeries(), new TimeSeries(), new TimeSeries(), new TimeSeries()];
+var station_contrib_graphOptions = [
+  { strokeStyle: 'rgba(255, 0, 0, 1)', fillStyle: 'rgba(255, 0, 0, 0.1)', lineWidth: 3 },
+  { strokeStyle: 'rgba(0, 255, 0, 1)', fillStyle: 'rgba(0, 255, 0, 0.1)', lineWidth: 3 },
+  { strokeStyle: 'rgba(0, 0, 255, 1)', fillStyle: 'rgba(0, 0, 255, 0.1)', lineWidth: 3 },
+  { strokeStyle: 'rgba(255, 255, 0, 1)', fillStyle: 'rgba(255, 255, 0, 0.1)', lineWidth: 3 }
+];
+var selection_timegraph = new SmoothieChart({ millisPerPixel: 20, grid: { strokeStyle: '#555555', lineWidth: 1, millisPerLine: 1000, verticalSections: 4 }});
+for (var i = 0; i < 4; i++)
+{
+  station_contrib_data[i].append(new Date().getTime(), 0);
+  selection_timegraph.addTimeSeries(station_contrib_data[i], station_contrib_graphOptions[i]);
+}
+selection_timegraph.streamTo(document.getElementById('output_stations_graph'), 200);
+
+
 var socket = io();
 socket.on('data', function (jdata)
 {
+  //console.log(jdata);
   var data = JSON.parse(jdata);
-  last_stat = (new Date());
   //console.log(data);
+  last_stat = (new Date());
     
   switch(data.type)
   {
@@ -111,22 +132,34 @@ socket.on('data', function (jdata)
         }
       }
       
+      if(selected_total_count > selected_count)
+      {
+        /* Stations have probably reset while the page is open , so reset counter */
+        selected_total_count = selected_count;
+      }
+      
       /* Check if we can use relative selected count to quantify station contribution */
       if(selected_count > selected_total_count)
       {
         selected_count_valid = 1;
         $("#output_stations").empty();
-        for(var i=0;i<10;i++)
+        var graphTime = new Date().getTime();
+        for(var i=0;i<4;i++)
         {
           if(selected_new_counts[i] > selected_counts[i])
           {
             /* Selected count for this station has incremented, so it has a share */
-            var percentage = 100*(selected_new_counts[i] - selected_counts[i])
-                              / (selected_count - selected_total_count);
+            var percentage = Math.min(100,100*(selected_new_counts[i] - selected_counts[i])
+                              / (selected_count - selected_total_count));
             $("#output_stations").append(
               $("<b></b>").text(station_data[i].callsign+": "),
               $("<span></span>").text(percentage+"%")
             );
+            station_contrib_data[i].append(graphTime, percentage);
+          }
+          else
+          {
+            station_contrib_data[i].append(graphTime, 0);
           }
         }
         selected_total_count = selected_count;
@@ -146,14 +179,33 @@ socket.on('data', function (jdata)
       if(selected_count_valid==0)
       {
         $("#output_stations").empty();
-        /* If last packet was >2s ago, assume it's stale */
-        if(station_data[data.id].timestamp > (new Date() - 2000))
+        /* If last packet was >2s ago, assume it's stale and ignore */
+        
+        if(typeof station_data[data.id] == "undefined")
+        {
+          $("#output_stations").text("No stations streaming.");
+          var graphTime = new Date().getTime();
+          for(var i; i<station_contrib_data.length; i++)
+          {
+            station_contrib_data[i].append(graphTime, 0);
+          }
+        }
+        else if(station_data[data.id].timestamp > (new Date() - 2000))
         {
           $("#output_stations").append(
             $("<b></b>").text(data.callsign+": "),
             $("<span></span>").text("100%"),
             $("<br></br>")
           );
+          var graphTime = new Date().getTime();
+          for(var i; i<station_contrib_data.length; i++)
+          {
+            if(i==data.id)
+              station_contrib_data[data.id].append(graphTime, 100);
+            else
+              station_contrib_data[data.id].append(graphTime, 0);
+          }
+              
         }
         else
         {
@@ -195,6 +247,7 @@ function checkServer()
   {
     $("#tsmerge_server").text("Stopped");
   }
+  console.log(station_contrib_data[0].data.length);
   setTimeout(checkServer, 100);
 }
 checkServer();
