@@ -8,17 +8,53 @@
 body {
     font-family: "Open Sans", Arial, sans-serif;
 }
+.rx_station-stat-label {
+    font-size: 1.1em;
+}
+.rx_station-stat {
+    display: block-inline;
+    margin-left: 12px;
+    width: 35px;
+    font-size: 1.1em;
+    font-weight: bold;
+}
+.rx_graph-legend {
+  display:inline-block;
+  font-size: 1.3em;
+}
+.font-red {
+  color: rgba(255, 0, 0, 1);
+}
+.font-green {
+  color: rgba(0, 255, 0, 1);
+}
+.font-blue {
+  color: rgba(0, 0, 255, 1);
+}
+.font-yellow {
+  color: rgba(255, 255, 0, 1);
+}
 </style>
+<link rel="stylesheet" href="/libs/bootstrap-3.3.7/css/bootstrap.min.css">
 </head>
 <body>
-<h1>tsmerge</h1>
+<div id="page-container" class="container">
+<div class="page-header">
+  <h1>HAMTV TS Merger Monitor</h1>
+</div>
 
-<h2>Output Contribution</h2>
-<canvas id="output_stations_graph" width="500" height="100"></canvas>
+<h2>Receiver Stations</h2>
+<div id="rx_stations_row" class="row"></div>
+
+<h3>Output Contribution</h3>
+<canvas id="output_stations_graph" width="700" height="100"></canvas>
+<div class="rx_graph-legend">
+  <span class="glyphicon glyphicon-minus font-red"></span><span id="graph-legend-0"></span><br>
+  <span class="glyphicon glyphicon-minus font-green"></span><span id="graph-legend-1"></span><br>
+  <span class="glyphicon glyphicon-minus font-blue"></span><span id="graph-legend-2"></span><br>
+  <span class="glyphicon glyphicon-minus font-yellow"></span><span id="graph-legend-3"></span><br>
+</div>
 <div id="output_stations"></div>
-
-<h2>Connected Stations</h2>
-<div id="rx_stations"></div>
 
 <h2>Server Status</h2>
 tsmerge: <span id="tsmerge_server"></span><br />
@@ -27,43 +63,300 @@ RX Buffer Loss : <span id="rx_buffer_loss"></span> packets<br />
 <h4>Threads</h4>
 <div id="server_threads"></div>
 
+</div>
 </body>
 <script src="/libs/jquery-3.1.1.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
+<script src="/libs/bootstrap-3.3.7/js/bootstrap.min.js"></script>
 <script src="/libs/smoothie.js"></script>
 <script>
 
 var selected_count_valid = 0;
 var selected_total_count = 0;
 
-var last_stat = 0;
-var station_data = [10];
-var no_connected_stations = 0;
-var selected_counts = [10];
-var selected_new_counts = [10];
-for(var i; i<10; i++)
-{
-  selected_counts[i] = 0;
-  selected_new_counts[i] = 0;
-}
-
-
-/* Hardcoded for 4x stations (TODO: Dynamic) */
-var station_contrib_data = [new TimeSeries(), new TimeSeries(), new TimeSeries(), new TimeSeries()];
 var station_contrib_graphOptions = [
-  { strokeStyle: 'rgba(255, 0, 0, 1)', fillStyle: 'rgba(255, 0, 0, 0.1)', lineWidth: 3 },
-  { strokeStyle: 'rgba(0, 255, 0, 1)', fillStyle: 'rgba(0, 255, 0, 0.1)', lineWidth: 3 },
-  { strokeStyle: 'rgba(0, 0, 255, 1)', fillStyle: 'rgba(0, 0, 255, 0.1)', lineWidth: 3 },
-  { strokeStyle: 'rgba(255, 255, 0, 1)', fillStyle: 'rgba(255, 255, 0, 0.1)', lineWidth: 3 }
+  { strokeStyle: 'rgba(255, 0, 0, 1)', fillStyle: 'rgba(255, 0, 0, 0.3)', lineWidth: 3 },
+  { strokeStyle: 'rgba(0, 255, 0, 1)', fillStyle: 'rgba(0, 255, 0, 0.3)', lineWidth: 3 },
+  { strokeStyle: 'rgba(0, 0, 255, 1)', fillStyle: 'rgba(0, 0, 255, 0.3)', lineWidth: 3 },
+  { strokeStyle: 'rgba(255, 255, 0, 1)', fillStyle: 'rgba(255, 255, 0, 0.3)', lineWidth: 3 }
 ];
-var selection_timegraph = new SmoothieChart({ millisPerPixel: 20, grid: { strokeStyle: '#555555', lineWidth: 1, millisPerLine: 1000, verticalSections: 4 }});
-for (var i = 0; i < 4; i++)
-{
-  station_contrib_data[i].append(new Date().getTime(), 0);
-  selection_timegraph.addTimeSeries(station_contrib_data[i], station_contrib_graphOptions[i]);
-}
-selection_timegraph.streamTo(document.getElementById('output_stations_graph'), 200);
 
+var last_stat = 0;
+var rx_stations = [null, null, null, null];
+var rx_stations_timegraph = new SmoothieChart({
+  millisPerPixel: 20,
+  grid: {
+    strokeStyle: '#555555',
+    lineWidth: 1,
+    millisPerLine: 1000,
+    verticalSections: 4
+    }
+  }
+);
+rx_stations.forEach(function(station, station_index)
+{
+  rx_stations[station_index] = {
+    /* Cached Panel Selector */
+    "panel": null,
+    
+    /* merger is reporting station connected */
+    "connected": false,
+    /* station is currently streaming packets */
+    "streaming": false,
+    /* station has been selected as output */
+    "selecting": false,
+    /* station is losing data on network upload */
+    "netlosing": false,
+    
+    /* Callsign of station */
+    "callsign": "",
+    
+    /* Stream counter value (updated by data feed) */
+    "streamed": 0,
+    /* Selected counter value (updated by data feed) */
+    "selected": 0,
+    /* Network loss counter value (updated by data feed) */
+    "netlost": 0,
+    
+    /* Previous stream counter value (updated by UI render) */
+    "previous_streamed": 0,
+    /* Previous selected counter value (updated by UI render) */
+    "previous_selected": 0,
+    /* Previous network loss counter value (updated by UI render) */
+    "netlost_selected": 0,
+    
+    /* Selected share from previous sample */
+    "previous_selected_count": 0,
+    "previous_selected_percent": 0,
+    
+    /* Contribution graph data */
+    "graph_data": new TimeSeries(),
+    "graph_options": station_contrib_graphOptions[station_index],
+  };
+  
+  /* Set up contribution graph data */
+  rx_stations[station_index].graph_data.append(new Date().getTime(), 0);
+  rx_stations_timegraph.addTimeSeries(
+    rx_stations[station_index].graph_data,
+    rx_stations[station_index].graph_options
+  );
+});
+rx_stations_timegraph.streamTo(document.getElementById('output_stations_graph'), 100);
+
+function create_stations()
+{
+  var colwidth = Math.floor(12/rx_stations.length);
+  rx_stations.forEach(function(station, station_id)
+  {
+    var col = $('<div></div>')
+      .attr('id', 'column-rx_station-'+station_id)
+      .attr('class', 'col-md-'+colwidth);
+        
+    station.panel = $('<div></div>')
+      .attr('id', 'panel-rx_station-'+station_id)
+      .attr('class', 'panel panel-default');
+    
+    var panel_heading = $('<div></div>')
+      .attr('class', 'panel-heading');
+    
+    panel_heading.append($('<h3></h3>')
+                            .attr('id','title-rx_station-'+station_id)
+                            .attr('class', 'panel-title')
+                         );
+    
+    station.panel.append(panel_heading);
+    
+    var panel_body = $('<div></div>')
+                        .attr('class', 'panel-body');
+    
+    /* Graphic here? */
+                        
+    panel_body.append($('<hr />'));
+    
+    panel_body.append($('<span></span>')
+                        .attr('class', 'rx_station-stat-label')
+                        .text('Last Data: '));
+    panel_body.append($('<span></span>')
+                        .attr('id','rx_station-active-'+station_id)
+                        .attr('class', 'rx_station-stat'))
+                        .append($('<br />'));
+    
+    panel_body.append($('<span></span>')
+                        .attr('class', 'rx_station-stat-label')
+                        .text('Total TS Packets: '));
+    panel_body.append($('<span></span>')
+                        .attr('id','rx_station-total-'+station_id)
+                        .attr('class', 'rx_station-stat'))
+                        .append($('<br />'));
+    
+    panel_body.append($('<span></span>')
+                        .attr('class', 'rx_station-stat-label')
+                        .text('Network Loss: '));
+    panel_body.append($('<span></span>')
+                        .attr('id','rx_station-netloss-'+station_id)
+                        .attr('class', 'rx_station-stat'))
+                        .append($('<br />'));
+    
+    panel_body.append($('<span></span>')
+                        .attr('class', 'rx_station-stat-label')
+                        .text('Selected: '));
+    panel_body.append($('<span></span>')
+                        .attr('id','rx_station-selected-'+station_id)
+                        .attr('class', 'rx_station-stat')
+                        .append($('<br />')));
+    
+    station.panel.append(panel_body);
+    col.append(station.panel);
+    $("#rx_stations_row").append(col);
+  });
+}
+
+function render_stations()
+{
+  var selected_total_count = 0;
+
+  rx_stations.forEach(function(station, station_id)
+  {
+    /** Update station status **/
+    /* streamed status */
+    if(station.streamed > station.previous_streamed)
+    {
+      station.streaming = true;
+      station.previous_streamed = station.streamed;
+    }
+    else
+    {
+      station.streaming = false;
+      station.previous_streamed = station.streamed;
+    }
+    /* selecting status */
+    if(station.selected > station.previous_selected)
+    {
+      station.selecting = true;
+      
+      station.previous_selected_count = (station.selected - station.previous_selected);
+      selected_total_count += station.previous_selected_count;
+      
+      station.previous_selected = station.selected;
+    }
+    else
+    {
+      station.selecting = false;
+      station.previous_selected = station.selected;
+      station.previous_selected_count = 0;
+    }
+    /* netlosing status */
+    if(station.netlost > station.previous_netlost)
+    {
+      station.netlosing = true;
+      station.previous_netlost = station.netlost;
+    }
+    else
+    {
+      station.netlosing = false;
+      station.previous_netlost = station.netlost;
+    }
+  
+    /* Set panel colour based on station status */
+    if(station.streaming)
+    {
+      if(station.selecting)
+      {
+        /* Station is streaming and selected for output */
+        /* Green panel - set if not already set */
+        if(!station.panel.hasClass('panel-success'))
+        {
+          station.panel
+            .removeClass('panel-default')
+            .removeClass('panel-info')
+            .addClass('panel-success');
+        }
+      }
+      else
+      {
+        /* Station is streaming, but not selected */
+        /* Blue panel - set if not already set */
+        if(!station.panel.hasClass('panel-info'))
+        {
+          station.panel
+            .removeClass('panel-default')
+            .removeClass('panel-success')
+            .addClass('panel-info');
+        }
+      }
+    }
+    else
+    {
+      /* Station is not streaming */
+      /* Grey panel - set if not already set */
+      if(!station.panel.hasClass('panel-default'))
+      {
+        station.panel
+          .removeClass('panel-info')
+          .removeClass('panel-success')
+          .addClass('panel-default');
+      }
+    }
+    
+    /* Set panel title */
+    $('#title-rx_station-'+station_id)
+      .text(station.callsign);
+
+    /* Set graph legend */
+    $('#graph-legend-'+station_id)
+      .text(station.callsign);
+      
+    /* Set text stats */
+    $('#rx_station-total-'+station_id)
+      .text(station.streamed);
+    $('#rx_station-selected-'+station_id)
+      .text(station.selected);
+    $('#rx_station-netloss-'+station_id)
+      .text(station.netlost);
+  });
+  
+  var graphTime = new Date().getTime();
+
+  if(selected_total_count > 0)
+  {
+    rx_stations.forEach(function(station, station_id)
+    {
+      rx_stations[station_id].previous_selected_percent = Math.min(100,100*station.previous_selected_count
+                          / selected_total_count);
+      rx_stations[station_id].graph_data.append(graphTime, station.previous_selected_percent);
+    });
+  }
+  else
+  {
+    rx_stations.forEach(function(station, station_id)
+    {
+      rx_stations[station_id].previous_selected_percent = 0;
+      rx_stations[station_id].graph_data.append(graphTime, 0);
+    });
+  }
+  
+  setTimeout(render_stations,100);
+}
+create_stations();
+render_stations();
+
+function update_stations(stations)
+{
+  rx_stations.forEach(function(station,station_index)
+  {
+    rx_stations[station_index].connected = false;
+  });
+
+  stations.forEach(function(station,station_index)
+  {
+    rx_stations[station.id].connected = true;
+    rx_stations[station.id].callsign = station.callsign;
+    rx_stations[station.id].streamed = station.total_received;
+    rx_stations[station.id].selected = station.selected;
+    rx_stations[station.id].netlost = station.lost;
+  });
+
+}
 
 var socket = io();
 socket.on('data', function (jdata)
@@ -86,131 +379,14 @@ socket.on('data', function (jdata)
       break;
       
     case 'stations':
-      var selected_count = 0;
-      if(data.stations.length > 0)
-      {
-        if(no_connected_stations)
-        {
-          no_connected_stations = 0;
-          $("#rx_stations").empty();
-        }
-        for(var i=0; i<data.stations.length; i++)
-        {
-          if($("#rx_station_" + data.stations[i].id).length == 0)
-          {
-            $("#rx_stations").append(
-              $("<div></div")
-                  .attr('id',"rx_station_" + data.stations[i].id)
-            );
-          }
-          station_div = $("#rx_station_" + data.stations[i].id);
-          station_div.empty();
-          station_div.append(
-            $("<h4></h4>").text(data.stations[i].callsign),
-            $("<ul></ul>").append(
-              $("<li></li>").text("Connected since: "+dateStringFromEpoch(data.stations[i].connected)),
-              $("<li></li>").text("Last TS Packet: "+dateStringFromEpoch(data.stations[i].timestamp)),
-              $("<li></li>").text("Total TS Packets: "+data.stations[i].total_received),
-              $("<li></li>").text("Network Loss: "+data.stations[i].lost),
-              $("<li></li>").text("Selected: "+data.stations[i].selected)
-            )
-          );
-          station_data[i] = data.stations[i];
-          selected_counts[i] = selected_new_counts[i];
-          selected_new_counts[i] = data.stations[i].selected;
-          
-          selected_count = selected_count + data.stations[i].selected;
-        }
-      }
-      else
-      {
-        if(!no_connected_stations)
-        {
-          no_connected_stations = 1;
-          $("#rx_stations").empty();
-          $("#rx_stations").text("No stations connected.");
-        }
-      }
-      
-      if(selected_total_count > selected_count)
-      {
-        /* Stations have probably reset while the page is open , so reset counter */
-        selected_total_count = selected_count;
-      }
-      
-      /* Check if we can use relative selected count to quantify station contribution */
-      if(selected_count > selected_total_count)
-      {
-        selected_count_valid = 1;
-        $("#output_stations").empty();
-        var graphTime = new Date().getTime();
-        for(var i=0;i<4;i++)
-        {
-          if(selected_new_counts[i] > selected_counts[i])
-          {
-            /* Selected count for this station has incremented, so it has a share */
-            var percentage = Math.min(100,100*(selected_new_counts[i] - selected_counts[i])
-                              / (selected_count - selected_total_count));
-            $("#output_stations").append(
-              $("<b></b>").text(station_data[i].callsign+": "),
-              $("<span></span>").text(percentage+"%")
-            );
-            station_contrib_data[i].append(graphTime, percentage);
-          }
-          else
-          {
-            station_contrib_data[i].append(graphTime, 0);
-          }
-        }
-        selected_total_count = selected_count;
-      }
-      else
-      {
-        selected_count_valid = 0;
-        if($("#output_stations").length==1)
-        {
-          $("#output_stations").text("No stations streaming.");
-        }
-      }
+      update_stations(data.stations);
       break;
       
     case 'selection':
       /* Only use if relative selected count gave us no information */
       if(selected_count_valid==0)
       {
-        $("#output_stations").empty();
-        /* If last packet was >2s ago, assume it's stale and ignore */
-        
-        if(typeof station_data[data.id] == "undefined")
-        {
-          $("#output_stations").text("No stations streaming.");
-          var graphTime = new Date().getTime();
-          for(var i; i<station_contrib_data.length; i++)
-          {
-            station_contrib_data[i].append(graphTime, 0);
-          }
-        }
-        else if(station_data[data.id].timestamp > (new Date() - 2000))
-        {
-          $("#output_stations").append(
-            $("<b></b>").text(data.callsign+": "),
-            $("<span></span>").text("100%"),
-            $("<br></br>")
-          );
-          var graphTime = new Date().getTime();
-          for(var i; i<station_contrib_data.length; i++)
-          {
-            if(i==data.id)
-              station_contrib_data[data.id].append(graphTime, 100);
-            else
-              station_contrib_data[data.id].append(graphTime, 0);
-          }
-              
-        }
-        else
-        {
-          $("#output_stations").text("No stations streaming.");
-        }
+        //TODO
       }
       break;
     
@@ -247,7 +423,6 @@ function checkServer()
   {
     $("#tsmerge_server").text("Stopped");
   }
-  console.log(station_contrib_data[0].data.length);
   setTimeout(checkServer, 100);
 }
 checkServer();
