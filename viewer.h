@@ -24,5 +24,23 @@ typedef struct {
 /* state for each client / viewer */
 viewer_t viewers[_VIEWERS_MAX];
 
+typedef struct {
+
+    /* Enabled */
+    int enabled;
+    
+    char filename[64];
+
+	/* The last packet saved to file */
+	int last_station;
+	uint32_t last_counter;
+	
+	/* Timestamp of when the last packet was saved to file */
+	int64_t timestamp;
+	
+} file_viewer_t;
+
+file_viewer_t file_viewer;
+
 #endif
 

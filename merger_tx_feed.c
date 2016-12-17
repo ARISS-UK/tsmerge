@@ -47,6 +47,35 @@ void *merger_tx_feed(void* arg)
 	{		
 		timestamp = timestamp_ms();
 		
+		if(file_viewer.enabled==1)
+		{
+		    mx_packet_t *p;
+		    
+		    /* See if there is any data still to send to this viewer */
+			pthread_mutex_lock(&merger.lock);
+			while((p = mx_next(&merger, file_viewer.last_station, file_viewer.last_counter)) != NULL)
+			{
+			    FILE *f = fopen(file_viewer.filename, "a+");
+				/* Try to send the new data to the viewer */
+				r = fwrite(p->raw, TS_PACKET_SIZE, 1, f);
+				if(r < 0)
+				{
+					/* An error has occured. */
+					fprintf(stdout,"Error saving output to file: %d\n", r);
+					/* Disable file output */
+					file_viewer.enabled = 0;
+					break;
+				}
+				fclose(f);
+				
+				/* Update viewer state */
+				file_viewer.last_station = p->station;
+				file_viewer.last_counter = p->counter;
+				file_viewer.timestamp = timestamp;
+			}
+			pthread_mutex_unlock(&merger.lock);
+	    }
+		
 		for(i = 0; i < _VIEWERS_MAX; i++)
 		{
 			mx_packet_t *p;

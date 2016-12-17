@@ -32,6 +32,11 @@ MX_DECLARE_THREADS();
 int main(int argc, char *argv[])
 {
     int i;
+    
+	/* Set up file output */
+	memset(&file_viewer, 0, sizeof(file_viewer));
+	file_viewer.enabled = 1;
+	strncpy(file_viewer.filename,"tsmerge.ts",63); // TODO: timestamp filename
 	
 	/* Clear the viewers array */
 	memset(&viewers, 0, sizeof(viewers));
