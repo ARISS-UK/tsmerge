@@ -44,17 +44,23 @@ int main(int argc, char *argv[])
 	file_viewer.last_station = -1;
 	file_viewer.last_counter = 0;
 	file_viewer.timestamp = timestamp_ms();
-
-    /* Generate timestamp string */
-    time(&now);
-    strftime(stime, sizeof stime, "%FT%TZ", gmtime(&now));
 	
-	/* Construct merged filename output */
-	snprintf(file_viewer.tsfilename,63,"merged-%s.ts",stime);
-	printf("Saving merged TS to: %s\n",file_viewer.tsfilename);
-	
-	snprintf(file_viewer.csvfilename,63,"merged-%s.csv",stime);
-	printf("Saving merged CSV to: %s\n",file_viewer.csvfilename);
+	if(file_viewer.tsenabled || file_viewer.csvenabled)
+	{
+        /* Generate timestamp string */
+        time(&now);
+        strftime(stime, sizeof stime, "%FT%TZ", gmtime(&now));
+    }
+	if(file_viewer.tsenabled)
+	{
+	    snprintf(file_viewer.tsfilename,63,"merged-%s.ts",stime);
+	    printf("Saving merged TS to: %s\n",file_viewer.tsfilename);
+	}
+	if(file_viewer.csvenabled)
+	{
+	    snprintf(file_viewer.csvfilename,63,"merged-%s.csv",stime);
+	    printf("Saving merged CSV to: %s\n",file_viewer.csvfilename);
+	}
 	
 	/* Clear the viewers array */
 	memset(&viewers, 0, sizeof(viewers));
