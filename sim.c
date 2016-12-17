@@ -157,7 +157,7 @@ static void _handle_alarm(int sig)
     for(i=0;i<SIM_STATIONS_NUMBER;i++)
     {
         /* Skip if station is done */
-        if(sim_stations[i].counter == input_length) continue;
+        if((sim_stations[i].counter*TS_PACKET_SIZE) >= input_length) continue;
         
         /* Check if this station is due another packet by it's latency */
         if(global_clock > (sim_stations[i].counter + sim_stations[i].latency_offset_ms + (rand() % sim_stations[i].latency_variance_ms)))
@@ -179,7 +179,7 @@ static void _handle_alarm(int sig)
                 }
             }                
             
-            if(sim_stations[i].counter == input_length)
+            if((sim_stations[i].counter*TS_PACKET_SIZE) >= input_length)
             {
                 /* Station finished, close output socket */
                 close(sim_stations[i].tspush.output_socket);
@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
         all_stations_finished = 1;
         for(i=0;i<SIM_STATIONS_NUMBER;i++)
         {
-            if(sim_stations[i].counter != input_length)
+            if((sim_stations[i].counter*TS_PACKET_SIZE) < input_length)
             {
                 all_stations_finished = 0;
             }
