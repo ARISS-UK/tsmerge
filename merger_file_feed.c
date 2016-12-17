@@ -23,12 +23,15 @@ void *merger_file_feed(void* arg)
   (void) arg;
   mx_packet_t *p;
   uint64_t timestamp;
+  char csvText[128];
+  uint8_t csvTextSize;
+  FILE *f;
   int r;
   
   /* The main network loop */
 	while(1)
 	{	
-		if(file_viewer.enabled==1)
+		if(file_viewer.tsenabled || file_viewer.csvenabled)
 		{
 	    p = NULL;
 	    timestamp = timestamp_ms();
@@ -37,18 +40,46 @@ void *merger_file_feed(void* arg)
 			pthread_mutex_lock(&merger.lock);
 			while((p = mx_next(&merger, file_viewer.last_station, file_viewer.last_counter)) != NULL)
 			{
-		    FILE *f = fopen(file_viewer.filename, "a+");
-				/* Try to send the new data to the viewer */
-				r = fwrite(p->raw, TS_PACKET_SIZE, 1, f);
-				if(r < 0)
-				{
-					/* An error has occured. */
-					fprintf(stdout,"Error saving output to file: %d\n", r);
-					/* Disable file output */
-					file_viewer.enabled = 0;
-					break;
+			  if(file_viewer.tsenabled)
+			  {
+			    /* Append TS segment to TS file */
+		      f = fopen(file_viewer.tsfilename, "a+");
+				  /* Try to send the new data to the viewer */
+				  r = fwrite(p->raw, TS_PACKET_SIZE, 1, f);
+				  if(r <= 0)
+				  {
+					  /* An error has occured. */
+					  fprintf(stderr,"Error saving ts output to file: %d\n", r);
+					  /* Disable file output */
+					  file_viewer.tsenabled = 0;
+					  break;
+				  }
+				  fclose(f);
 				}
-				fclose(f);
+				
+				if(file_viewer.csvenabled)
+				{
+			    /* Append CSV segment description to CSV file */
+				  f = fopen(file_viewer.csvfilename, "a+");
+				  /* Create text [timestamp_ms, station id, station name, station counter] */
+			    csvTextSize = snprintf(csvText, 127, "%ld,%d,%s,%d\n",
+			              timestamp,
+			              p->station,
+			              merger.station[p->station].sid,
+			              p->counter
+			    );
+				  /* Try to send the new data to the viewer */
+				  r = fwrite(csvText, csvTextSize, 1, f);
+				  if(r <= 0)
+				  {
+					  /* An error has occured. */
+					  fprintf(stderr,"Error saving csv output to file: %d\n", r);
+					  /* Disable file output */
+					  file_viewer.csvenabled = 0;
+					  break;
+				  }
+				  fclose(f);
+				}
 				
 				/* Update viewer state */
 				file_viewer.last_station = p->station;

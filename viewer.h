@@ -27,9 +27,11 @@ viewer_t viewers[_VIEWERS_MAX];
 typedef struct {
 
     /* Enabled */
-    int enabled;
+    int tsenabled;
+    int csvenabled;
     
-    char filename[64];
+    char tsfilename[64];
+    char csvfilename[64];
 
 	/* The last packet saved to file */
 	int last_station;

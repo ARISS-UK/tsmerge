@@ -39,15 +39,22 @@ int main(int argc, char *argv[])
     
 	/* Set up file output */
 	memset(&file_viewer, 0, sizeof(file_viewer));
-	file_viewer.enabled = 1;
+	file_viewer.tsenabled = 1;
+	file_viewer.csvenabled = 1;
+	file_viewer.last_station = -1;
+	file_viewer.last_counter = 0;
+	file_viewer.timestamp = timestamp_ms();
 
     /* Generate timestamp string */
     time(&now);
     strftime(stime, sizeof stime, "%FT%TZ", gmtime(&now));
 	
 	/* Construct merged filename output */
-	snprintf(file_viewer.filename,63,"merged-%s.ts",stime);
-	printf("Saving merged TS to: %s\n",file_viewer.filename);
+	snprintf(file_viewer.tsfilename,63,"merged-%s.ts",stime);
+	printf("Saving merged TS to: %s\n",file_viewer.tsfilename);
+	
+	snprintf(file_viewer.csvfilename,63,"merged-%s.csv",stime);
+	printf("Saving merged CSV to: %s\n",file_viewer.csvfilename);
 	
 	/* Clear the viewers array */
 	memset(&viewers, 0, sizeof(viewers));

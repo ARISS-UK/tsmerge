@@ -5,3 +5,4 @@ tssim
 *.o
 *.ts
 merged-*.ts
+merged-*.csv
