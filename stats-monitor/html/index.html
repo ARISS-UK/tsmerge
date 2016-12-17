@@ -35,7 +35,7 @@ body {
   color: rgba(255, 255, 0, 1);
 }
 </style>
-<link rel="stylesheet" href="/libs/bootstrap-3.3.7/css/bootstrap.min.css">
+<link rel="stylesheet" href="libs/bootstrap-3.3.7/css/bootstrap.min.css">
 </head>
 <body>
 <div id="page-container" class="container">
@@ -65,10 +65,10 @@ RX Buffer Loss : <span id="rx_buffer_loss"></span> packets<br />
 
 </div>
 </body>
-<script src="/libs/jquery-3.1.1.min.js"></script>
-<script src="/socket.io/socket.io.js"></script>
-<script src="/libs/bootstrap-3.3.7/js/bootstrap.min.js"></script>
-<script src="/libs/smoothie.js"></script>
+<script src="libs/jquery-3.1.1.min.js"></script>
+<script src="socket.io/socket.io.js"></script>
+<script src="libs/bootstrap-3.3.7/js/bootstrap.min.js"></script>
+<script src="libs/smoothie.js"></script>
 <script>
 
 var selected_count_valid = 0;
@@ -109,7 +109,7 @@ rx_stations.forEach(function(station, station_index)
     "netlosing": false,
     
     /* Callsign of station */
-    "callsign": "",
+    "callsign": "[Station Slot Free]",
     
     /* Stream counter value (updated by data feed) */
     "streamed": 0,
@@ -358,7 +358,9 @@ function update_stations(stations)
 
 }
 
-var socket = io();
+var socket = io('https://hamtv.batc.tv', {
+  path: "/tsmerge/socket.io",
+});
 socket.on('data', function (jdata)
 {
   //console.log(jdata);
