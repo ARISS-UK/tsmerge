@@ -30,14 +30,13 @@ static mx_packet_t *_get_packet(mx_t *s, int station, uint32_t counter)
 static mx_packet_t *_next_pcr(mx_t *s, int station, uint32_t counter)
 {
 	mx_station_t *st;
-	mx_packet_t *p, *l;
+	mx_packet_t *p;
 	
 	/* Increments the counter until we find the first
 	 * packet in the designated PID with a PCR timestamp.
 	 * Returns a pointer to the packet on success. */
 	
 	st = &s->station[station];
-	l = NULL;
 	
 	for(; counter != st->latest + 1; counter++)
 	{
@@ -46,15 +45,6 @@ static mx_packet_t *_next_pcr(mx_t *s, int station, uint32_t counter)
 		
 		/* Packet must exist */
 		if(p->station != station || p->counter != counter) continue;
-		
-		/* Link the last packet to this one */
-		if(l != NULL)
-		{
-			l->next_station = p->station;
-			l->next_counter = p->counter;
-		}
-		
-		l = p;
 		
 		/* Packet header must have been parsed */
 		if(p->error != TS_OK) continue;
@@ -285,8 +275,9 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 int mx_update(mx_t *s, int64_t timestamp)
 {
 	int i;
-	mx_packet_t *o, *p;
+	mx_packet_t *o, *l, *p;
 	uint64_t pcr, best_pcr;
+	uint32_t counter;
 	int best_station;
 	
 	/* Update the global timestamp */
@@ -330,6 +321,23 @@ int mx_update(mx_t *s, int64_t timestamp)
 	}
 	
 	if(best_station == -1) return(0);
+	
+	/* Link the packets inside the segment */
+	l = NULL;
+	for(counter = s->station[best_station].left; counter != s->station[best_station].right + 1; counter++)
+	{
+		p = _get_packet(s, best_station, counter);
+		if(p == NULL) continue;
+		
+		/* Link the last packet to this one */
+		if(l != NULL)
+		{
+			l->next_station = p->station;
+			l->next_counter = p->counter;
+		}
+		
+		l = p;
+	}
 	
 	/* Link the previous segment to this one */
 	if(o != NULL)
