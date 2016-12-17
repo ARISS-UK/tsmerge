@@ -14,6 +14,6 @@
   "bugs": "https://github.com/fsphil/tsmerge/issues",
   "dependencies": {
     "express": "^4.14.0",
-    "socket.io": "^1.7.1"
+    "socket.io": "^1.7.2"
   }
 }
