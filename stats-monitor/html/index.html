@@ -34,27 +34,63 @@ body {
 .font-yellow {
   color: rgba(255, 255, 0, 1);
 }
+#column-contrib-graph {
+  display: inline-block;
+}
+.poster-icon.play {
+    display: none !important;
+}
+.spinner-three-bounce {
+    display: none !important;
+}
+#stream-player-overlay {
+    color: white;
+    /*background-color: rgba(0, 0, 0, 0.5);*/
+
+  background: rgba(0,0,0,0.5);
+  background: -webkit-linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5),rgba(0,0,0,0));
+  background: -o-linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5),rgba(0,0,0,0));
+  background: -moz-linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5),rgba(0,0,0,0));
+  background: linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5),rgba(0,0,0,0));
+
+    text-align: center;
+    padding-top: 35px;
+    padding-bottom: 25px;
+    height: auto;
+    width: inherit;
+    font-size: 3em;
+    font-weight: bold;
+    position: absolute;
+    z-index: 100;
+    opacity: 1 !important;
+}
 </style>
 <link rel="stylesheet" href="libs/bootstrap-3.3.7/css/bootstrap.min.css">
 </head>
 <body>
 <div id="page-container" class="container">
 <div class="page-header">
+  <a href="https://github.com/fsphil/tsmerge" target="_blank" class="pull-right">Project by Phil Heron</a>
   <h1>HAMTV TS Merger Monitor</h1>
 </div>
-
+<div id="player-row" class="row">
+  <div id="column-contrib-graph">
+    <h3>Output Contribution</h3>
+    <br />
+    <canvas id="output_stations_graph" width="400" height="100"></canvas>
+    <div class="rx_graph-legend">
+      <span class="glyphicon glyphicon-minus font-red"></span><span id="graph-legend-0"></span><br>
+      <span class="glyphicon glyphicon-minus font-green"></span><span id="graph-legend-1"></span><br>
+      <span class="glyphicon glyphicon-minus font-blue"></span><span id="graph-legend-2"></span><br>
+      <span class="glyphicon glyphicon-minus font-yellow"></span><span id="graph-legend-3"></span><br>
+    </div>
+  </div>
+  <div id="stream-player" class="pull-right">
+    <div id="stream-player-overlay">Standing by for HAMTV</div>
+  </div>
+</div>
 <h2>Receiver Stations</h2>
 <div id="rx_stations_row" class="row"></div>
-
-<h3>Output Contribution</h3>
-<canvas id="output_stations_graph" width="700" height="100"></canvas>
-<div class="rx_graph-legend">
-  <span class="glyphicon glyphicon-minus font-red"></span><span id="graph-legend-0"></span><br>
-  <span class="glyphicon glyphicon-minus font-green"></span><span id="graph-legend-1"></span><br>
-  <span class="glyphicon glyphicon-minus font-blue"></span><span id="graph-legend-2"></span><br>
-  <span class="glyphicon glyphicon-minus font-yellow"></span><span id="graph-legend-3"></span><br>
-</div>
-<div id="output_stations"></div>
 
 <h2>Server Status</h2>
 tsmerge: <span id="tsmerge_server"></span><br />
@@ -69,10 +105,11 @@ RX Buffer Loss : <span id="rx_buffer_loss"></span> packets<br />
 <script src="socket.io/socket.io.js"></script>
 <script src="libs/bootstrap-3.3.7/js/bootstrap.min.js"></script>
 <script src="libs/smoothie.js"></script>
+<script src="libs/clappr/clappr.min.js"></script>
+<script src="libs/clappr/rtmp/rtmp.min.js"></script>
+<script src="libs/batc.js"></script>
 <script>
-
-var selected_count_valid = 0;
-var selected_total_count = 0;
+var rtmpUrl = "rtmp://beta.batc.tv:1935/event/goonhilly";
 
 var station_contrib_graphOptions = [
   { strokeStyle: 'rgba(255, 0, 0, 1)', fillStyle: 'rgba(255, 0, 0, 0.3)', lineWidth: 3 },
@@ -84,7 +121,7 @@ var station_contrib_graphOptions = [
 var last_stat = 0;
 var rx_stations = [null, null, null, null];
 var rx_stations_timegraph = new SmoothieChart({
-  millisPerPixel: 20,
+  millisPerPixel: 50,
   grid: {
     strokeStyle: '#555555',
     lineWidth: 1,
@@ -142,6 +179,55 @@ rx_stations.forEach(function(station, station_index)
   );
 });
 rx_stations_timegraph.streamTo(document.getElementById('output_stations_graph'), 100);
+
+var status_output = false;
+var status_counter = 0;
+var player_overlay = true;
+function checkStatus()
+{
+  var check_status = false;
+  rx_stations.forEach(function(station)
+  {
+    if(station.selecting)
+    {
+      check_status = true;
+    }
+  });
+  
+  if(check_status && !status_output)
+  {
+    status_counter++;
+    if(status_counter > 10)
+    {
+      status_output = true;
+      status_counter = 0;
+    }
+  }
+
+  if(!check_status && status_output)
+  {
+    status_counter--;
+    if(status_counter < -20)
+    {
+      status_output = false;
+      status_counter = 0;
+    }
+  }
+
+  if(!status_output && !player_overlay)
+  {
+    $("#stream-player-overlay").show();
+    player_overlay = true;
+  }
+  else if(status_output && player_overlay)
+  {
+    $("#stream-player-overlay").hide();
+    player_overlay = false;
+  }
+  
+  setTimeout(checkStatus,50);
+}
+checkStatus();
 
 function create_stations()
 {
@@ -303,8 +389,16 @@ function render_stations()
       .text(station.callsign);
 
     /* Set graph legend */
-    $('#graph-legend-'+station_id)
-      .text(station.callsign);
+    if(station.callsign=="[Station Slot Free]")
+    {
+      $('#graph-legend-'+station_id)
+        .text("");
+    }
+    else
+    {
+      $('#graph-legend-'+station_id)
+        .text(station.callsign);
+    }
       
     /* Set text stats */
     $('#rx_station-total-'+station_id)
@@ -385,11 +479,7 @@ socket.on('data', function (jdata)
       break;
       
     case 'selection':
-      /* Only use if relative selected count gave us no information */
-      if(selected_count_valid==0)
-      {
         //TODO
-      }
       break;
     
     case 'threads':
