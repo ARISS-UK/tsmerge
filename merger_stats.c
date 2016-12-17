@@ -178,16 +178,16 @@ void *merger_stats(void* arg)
   
   while(1)
   {
-    /* Loop is ~10hz, individual functions should clock themselves off 'i' */
+    /* Loop, and i, are ~10Hz, individual functions should clock themselves off 'i' */
   
     /* UDP Rx Circular Buffer */
-    stats_rxCircularBuffer();
+    stats_rxCircularBuffer(); /* 10Hz */
     
     /* RX per-station Stats */
-    stats_stations();
+    stats_stations(); /* 10Hz */
     
     /* Output contribution stats */
-    stats_selection();
+    stats_selection(); /* 10Hz */
     
     /* Server threads stats */
     if(i % 5 == 0) /* 2Hz */
