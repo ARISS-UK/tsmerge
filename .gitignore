@@ -4,3 +4,4 @@ tsinfo
 tssim
 *.o
 *.ts
+merged-*.ts

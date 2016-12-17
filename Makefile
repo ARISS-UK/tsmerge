@@ -14,6 +14,7 @@ TSMERGE_SRCS = main.c \
                 merger_rx_socket.c \
                 merger_tx_feed.c \
                 merger_tx_socket.c \
+                merger_file_feed.c \
                 merger_rx_buffer.c
 
 TSMERGE_LIBS = -lpthread

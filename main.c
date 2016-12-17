@@ -23,6 +23,7 @@
 #include "merger_rx_feed.h"
 #include "merger_tx_socket.h"
 #include "merger_tx_feed.h"
+#include "merger_file_feed.h"
 
 rxBuffer_t rxBuffer;
 
@@ -32,11 +33,21 @@ MX_DECLARE_THREADS();
 int main(int argc, char *argv[])
 {
     int i;
+	
+	time_t now;
+    char stime[20];
     
 	/* Set up file output */
 	memset(&file_viewer, 0, sizeof(file_viewer));
 	file_viewer.enabled = 1;
-	strncpy(file_viewer.filename,"tsmerge.ts",63); // TODO: timestamp filename
+
+    /* Generate timestamp string */
+    time(&now);
+    strftime(stime, sizeof stime, "%FT%TZ", gmtime(&now));
+	
+	/* Construct merged filename output */
+	snprintf(file_viewer.filename,63,"merged-%s.ts",stime);
+	printf("Saving merged TS to: %s\n",file_viewer.filename);
 	
 	/* Clear the viewers array */
 	memset(&viewers, 0, sizeof(viewers));
