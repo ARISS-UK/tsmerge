@@ -1,23 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="icon" href="/favicon.ico">
 <title>tsmerge monitor</title>
+<meta name="description" content="ARISS HAMTV TS Merger Dashboard">
 <style>
 body {
-    font-family: "Open Sans", Arial, sans-serif;
+  font-family: "Open Sans", Arial, sans-serif;
+}
+#merger-status-wrap {
+  margin-top: 5px;
+  margin-bottom: 30px;
 }
 .rx_station-stat-label {
-    font-size: 1.1em;
+  font-size: 1.1em;
 }
 .rx_station-stat {
-    display: block-inline;
-    margin-left: 12px;
-    width: 35px;
-    font-size: 1.1em;
-    font-weight: bold;
+  display: block;
+  float: right;
+  text-align: right;
+  width: 75px;
+  font-size: 1.1em;
+  font-weight: bold;
 }
 .rx_graph-legend {
   display:inline-block;
@@ -39,14 +45,14 @@ body {
   display: inline-block;
 }
 .poster-icon.play {
-    display: none !important;
+  display: none !important;
 }
 .spinner-three-bounce {
-    display: none !important;
+  display: none !important;
 }
 #stream-player-overlay {
-    color: white;
-    /*background-color: rgba(0, 0, 0, 0.5);*/
+  color: white;
+  /*background-color: rgba(0, 0, 0, 0.5);*/
 
   background: rgba(0,0,0,0.5);
   background: -webkit-linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5),rgba(0,0,0,0));
@@ -54,16 +60,16 @@ body {
   background: -moz-linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5),rgba(0,0,0,0));
   background: linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5),rgba(0,0,0,0));
 
-    text-align: center;
-    padding-top: 35px;
-    padding-bottom: 25px;
-    height: auto;
-    width: inherit;
-    font-size: 3em;
-    font-weight: bold;
-    position: absolute;
-    z-index: 100;
-    opacity: 1 !important;
+  text-align: center;
+  padding-top: 35px;
+  padding-bottom: 25px;
+  height: auto;
+  width: inherit;
+  font-size: 3em;
+  font-weight: bold;
+  position: absolute;
+  z-index: 100;
+  opacity: 1 !important;
 }
 .panel-body > .station-tag {
   opacity: 0.1;
@@ -77,13 +83,13 @@ body {
 <div id="page-container" class="container">
 <div class="page-header">
   <a href="https://github.com/fsphil/tsmerge" target="_blank" class="pull-right">Project by Phil Heron</a>
-  <h1>HAMTV TS Merger Monitor</h1>
+  <h1>HAMTV TS Merger</h1>
 </div>
 <div id="player-row" class="row">
   <div id="column-contrib-graph">
-    <h3>Output Contribution</h3>
-    <br />
-    <canvas id="output_stations_graph" width="400" height="100"></canvas>
+    <h1 id="merger-status-wrap"><span id="merger_status_indicator" class="label label-default">Merger Standing By</span></h1>
+    <h4>Output Contribution</h4>
+    <canvas id="output_stations_graph" width="350" height="100"></canvas>
     <div class="rx_graph-legend">
       <span class="glyphicon glyphicon-minus font-red"></span><span id="graph-legend-0"></span><br>
       <span class="glyphicon glyphicon-minus font-green"></span><span id="graph-legend-1"></span><br>
@@ -91,22 +97,35 @@ body {
       <span class="glyphicon glyphicon-minus font-yellow"></span><span id="graph-legend-3"></span><br>
     </div>
     <br><br>
-    Direct TS Feed: <a href="tcp://hamtv.batc.tv:5679">tcp://hamtv.batc.tv:5679</a>
+    <p>
+      This is the status display for the HAMTV TS Merger Project.
+    </p>
+    <p>
+      For low-latency output viewing use the MPEG-TS Feed: <a href="tcp://hamtv.batc.tv:5679">tcp://hamtv.batc.tv:5679</a>
+    </p>
+    <p>
+      For more information, visit #ariss on freenode IRC (<a href="http://webchat.freenode.net/?channels=#ariss" target="_blank">webchat link</a>)
+    </p>
   </div>
   <div id="stream-player" class="pull-right">
-    <div id="stream-player-overlay">Standing by for HAMTV</div>
+    <div id="stream-player-overlay">Output Standing By</div>
   </div>
 </div>
 <h2>Receiver Stations</h2>
 <div id="rx_stations_row" class="row"></div>
 
-<h2>Server Status</h2>
-tsmerge: <span id="tsmerge_server"></span><br />
-RX Buffer Queue: <span id="rx_buffer_queue"></span> packets<br />
-RX Buffer Loss : <span id="rx_buffer_loss"></span> packets<br />
-<h4>Threads</h4>
-<div id="server_threads"></div>
-
+<div class="row">
+  <div class="col-md-3">
+    <h2>Server Status</h2>
+    tsmerge: <span id="tsmerge_server"></span><br />
+    RX Buffer Queue: <span id="rx_buffer_queue"></span> packets<br />
+    RX Buffer Loss : <span id="rx_buffer_loss"></span> packets<br />
+  </div>
+  <div class="col-md-4">
+    <h4>Threads</h4>
+    <div id="server_threads"></div>
+  </div>
+</div>
 </div>
 </body>
 <script src="libs/jquery-3.1.1.min.js"></script>
@@ -135,7 +154,7 @@ var rx_stations_timegraph = new SmoothieChart({
   grid: {
     strokeStyle: '#555555',
     lineWidth: 1,
-    millisPerLine: 1000,
+    millisPerLine: 2000,
     verticalSections: 4
     }
   }
@@ -264,15 +283,15 @@ function create_stations()
     
     panel_body.append($('<span></span>')
                         .attr('class', 'rx_station-stat-label')
-                        .text('Last Data: '));
+                        .text('Last Active: '));
     panel_body.append($('<span></span>')
-                        .attr('id','rx_station-active-'+station_id)
+                        .attr('id','rx_station-last_updated-'+station_id)
                         .attr('class', 'rx_station-stat'))
                         .append($('<br />'));
     
     panel_body.append($('<span></span>')
                         .attr('class', 'rx_station-stat-label')
-                        .text('Total TS Packets: '));
+                        .text('TS Packets: '));
     panel_body.append($('<span></span>')
                         .attr('id','rx_station-total-'+station_id)
                         .attr('class', 'rx_station-stat'))
@@ -280,7 +299,7 @@ function create_stations()
     
     panel_body.append($('<span></span>')
                         .attr('class', 'rx_station-stat-label')
-                        .text('Network Loss: '));
+                        .text('TS Network Loss: '));
     panel_body.append($('<span></span>')
                         .attr('id','rx_station-netloss-'+station_id)
                         .attr('class', 'rx_station-stat'))
@@ -288,7 +307,7 @@ function create_stations()
     
     panel_body.append($('<span></span>')
                         .attr('class', 'rx_station-stat-label')
-                        .text('Selected: '));
+                        .text('PCR Segments Used: '));
     panel_body.append($('<span></span>')
                         .attr('id','rx_station-selected-'+station_id)
                         .attr('class', 'rx_station-stat')
@@ -303,6 +322,28 @@ function create_stations()
 function render_stations()
 {
   var graphTime = new Date().getTime();
+
+  var merger_status_indicator = $("#merger_status_indicator");
+  if(mx_merger.output_live == 0)
+  {
+    if(!merger_status_indicator.hasClass('label-default'))
+    {
+      merger_status_indicator
+        .removeClass('label-success')
+        .addClass('label-default')
+        .text('Merger Standing by');
+    }
+  }
+  else if(mx_merger.output_live == 1)
+  {
+    if(!merger_status_indicator.hasClass('label-success'))
+    {
+      merger_status_indicator
+        .removeClass('label-default')
+        .addClass('label-success')
+        .text('Merger Output is Live!');
+    }
+  }
 
   rx_stations.forEach(function(station, station_id)
   {
@@ -366,31 +407,33 @@ function render_stations()
     /* Set Labels */
     if(station.selected != 0)
     {
-      $('#rx_station-selecting-label-'+station_id).fadeTo(50,1);
+      $('#rx_station-selecting-label-'+station_id).css("opacity", 1);
     }
     else
     {
-      $('#rx_station-selecting-label-'+station_id).fadeTo(50,0.1);
+      $('#rx_station-selecting-label-'+station_id).css("opacity", 0.1);
     }
     if(station.received != 0)
     {
-      $('#rx_station-streaming-label-'+station_id).fadeTo(50,1);
+      $('#rx_station-streaming-label-'+station_id).css("opacity", 1);
     }
     else
     {
-      $('#rx_station-streaming-label-'+station_id).fadeTo(50,0.1);
+      $('#rx_station-streaming-label-'+station_id).css("opacity", 0.1);
     }
     if(station.lost_sum != 0)
     {
-      $('#rx_station-netloss-label-'+station_id).fadeTo(50,1);
+      $('#rx_station-netloss-label-'+station_id).css("opacity", 1);
     }
     else
     {
-      $('#rx_station-netloss-label-'+station_id).fadeTo(50,0.1);
+      $('#rx_station-netloss-label-'+station_id).css("opacity", 0.1);
     }
 
       
     /* Set text stats */
+    $('#rx_station-last_updated-'+station_id)
+      .text(shortSince(station.last_updated));
     $('#rx_station-total-'+station_id)
       .text(station.received_sum);
     $('#rx_station-selected-'+station_id)
@@ -424,6 +467,7 @@ function update_stations(stations)
   {
     rx_stations[station.id].connected = true;
     rx_stations[station.id].callsign = station.callsign;
+    rx_stations[station.id].last_updated = station.last_updated;
     rx_stations[station.id].received = station.received;
     rx_stations[station.id].received_sum = station.received_sum;
     rx_stations[station.id].selected = station.selected;
@@ -465,21 +509,21 @@ socket.on('data', function (jdata)
       break;
       
     case 'threads':
-        var threads_list = $("<ul></ul>");
-        for(var i=0; i<data.threads.length; i++)
-        {
-            threads_list.append(
-                $("<li></li>").text(
-                    data.threads[i].name +
-                    ": "+
-                    data.threads[i].cpu_percent +
-                    "%"
-                )
-            );
-        }
-        $("#server_threads").empty();
-        $("#server_threads").append(threads_list);
-        break;
+      var threads_list = $("<ul></ul>");
+      for(var i=0; i<data.threads.length; i++)
+      {
+        threads_list.append(
+          $("<li></li>").text(
+            data.threads[i].name +
+            ": "+
+            data.threads[i].cpu_percent +
+            "%"
+          )
+        );
+      }
+      $("#server_threads").empty();
+      $("#server_threads").append(threads_list);
+      break;
       
     default:
       console.log("Unknown data type: "+data.type);
@@ -505,6 +549,42 @@ function dateStringFromEpoch(epoch)
 {
   var date = new Date(epoch);
   return date.toDateString() + " " + date.toLocaleTimeString();
+}
+
+function shortSince(timestamp)
+{
+  if(typeof timestamp == "undefined")
+  {
+    return "";
+  }
+
+  var seconds = Math.floor((new Date() - new Date(timestamp)) / 1000);
+
+  if(seconds > 500000)
+  {
+    return "";
+  }
+
+  var interval = Math.floor(seconds / 86400);
+  if(interval > 1)
+  {
+    return interval + "d ago";
+  }
+  interval = Math.floor(seconds / 3600);
+  if(interval > 1)
+  {
+    return interval + "h ago";
+  }
+  interval = Math.floor(seconds / 60);
+  if(interval > 1)
+  {
+    return interval + "m ago";
+  }
+  if(seconds > 1)
+  {
+    return Math.floor(seconds) + "s ago";
+  }
+  return "just now";
 }
 </script>
 </html>
