@@ -22,10 +22,10 @@ extern mx_thread_t mx_threads[];
 
 static void udpstat(char* fmt, ...)
 {
-    char statmsg[1024];
+    char statmsg[1200];
     va_list arg;
     va_start(arg, fmt);
-    vsnprintf(statmsg,1023,fmt, arg);
+    vsnprintf(statmsg,1200,fmt, arg);
     va_end(arg);
 
     int sock, n;
@@ -51,33 +51,67 @@ static void udpstat(char* fmt, ...)
 
 static void stats_rxCircularBuffer(void)
 {
+  int head, tail, queue, loss;
   /* rxBuffer functions are internally locked */
-  udpstat("{\"type\":\"udprxbuffer\",\"head\":%d,\"tail\":%d,\"loss\":%d}",
-    rxBufferHead(&rxBuffer),
-    rxBufferTail(&rxBuffer),
-    rxBufferLoss(&rxBuffer)
-    );
+
+  head = rxBufferHead(&rxBuffer);
+  tail = rxBufferTail(&rxBuffer);
+  loss = rxBufferLoss(&rxBuffer);
+
+  queue = head - tail;
+  if(queue < 0)
+  {
+    queue = queue + 2048;
+  }
+  
+  udpstat("{\"type\":\"udprxbuffer\",\"queue\":%d,\"loss\":%d}",
+    queue,
+    loss
+  );
 }
 
-static void stats_stations(void)
+typedef struct {
+  int station;
+  uint32_t counter;
+} stats_merger_t;
+
+stats_merger_t previous_merger_state; 
+
+static void stats_merger(void)
 {
   int i, j;
-  int64_t timestamp;
-  char tmpString[1024];
+  char tmpString[1200];
+ 
+  uint8_t merger_running;
+ 
+  pthread_mutex_lock(&merger.lock);
+  
+  merger_running = 0;
+  if(merger.next_station >= 0)
+  {
+    if(merger.next_station != previous_merger_state.station || merger.next_counter != previous_merger_state.counter)
+    {
+      merger_running = 1;
+      previous_merger_state.station = merger.next_station;
+      previous_merger_state.counter = merger.next_counter;
+    }
+  }
   
   tmpString[0] = '\0';
-  sprintf(tmpString,"{\"type\":\"stations\",\"stations\":[");
-  timestamp = timestamp_ms();
+  sprintf(tmpString,"{\"type\":\"merger\",\"live\":%d,\"selected\":%d,\"stations\":[",
+    merger_running,
+    merger.next_station
+  );
+
+  /* Sum selected count for merger contribution count */
+  uint32_t selected_allstations = 0;
+  for(i = 0; i < _STATIONS; i++)
+  {
+    selected_allstations += merger.station[i].selected;
+  }
   
-  pthread_mutex_lock(&merger.lock);
   for(i = j = 0; i < _STATIONS; i++)
   {
-    /* Only active if last packet within the last 60s */
-    if(merger.station[i].timestamp < (timestamp - 60 * 1000))
-    {
-      continue;
-    }
-    
     if(j!=0)
     {
       /* Comma seperation */
@@ -85,48 +119,25 @@ static void stats_stations(void)
     }
     j++;
     
-    sprintf(tmpString,"%s{\"id\":%d,\"callsign\":\"%s\",\"connected\":%ld,\"counter_initial\":%d,\"timestamp\":%ld,\"latest\":%d,\"total_received\":%d,\"selected\":%d,\"lost\":%d}",
+    sprintf(tmpString,"%s{\"id\":%d,\"callsign\":\"%s\",\"last_updated\":%ld,\"received\":%d,\"received_sum\":%d,\"selected\":%d,\"selected_percent\":%d,\"selected_sum\":%d,\"lost_sum\":%d}",
       tmpString,
       i,
       merger.station[i].sid,
-      merger.station[i].connected,
-      merger.station[i].counter_initial,
       merger.station[i].timestamp,
-      merger.station[i].latest,
-      merger.station[i].total_received,
+      merger.station[i].received,
+      merger.station[i].received_sum,
       merger.station[i].selected,
-      (merger.station[i].latest + 1 - (merger.station[i].counter_initial + merger.station[i].total_received))
+      (int)(100 * ((double)merger.station[i].selected / (double)selected_allstations)),
+      merger.station[i].selected_sum,
+      merger.station[i].latest - (merger.station[i].counter_initial + merger.station[i].received_sum)
     );
+    merger.station[i].received = 0;
+    merger.station[i].selected = 0;
   }
   pthread_mutex_unlock(&merger.lock);
   
   udpstat("%s]}",tmpString);
 }
-
-static void stats_selection(void)
-{
-  int next_station_id;
-  char next_station_name[10];
-  
-  pthread_mutex_lock(&merger.lock);
-  if(merger.next_station >= 0)
-  {
-    next_station_id = merger.next_station;
-    strncpy(next_station_name, merger.station[next_station_id].sid, 10);
-    
-    pthread_mutex_unlock(&merger.lock);
-    
-    udpstat("{\"type\":\"selection\",\"id\":%d,\"callsign\":\"%s\"}",
-      next_station_id,
-      next_station_name
-      );
-  }
-  else
-  {
-    pthread_mutex_unlock(&merger.lock);
-  }
-}
-
 
 static void stats_threads(void)
 {
@@ -178,24 +189,23 @@ void *merger_stats(void* arg)
   
   while(1)
   {
-    /* Loop, and i, are ~10Hz, individual functions should clock themselves off 'i' */
-  
-    /* UDP Rx Circular Buffer */
-    stats_rxCircularBuffer(); /* 10Hz */
+    /** ~5Hz */
+ 
+    /* Merger internal Stats */
+    stats_merger();
     
-    /* RX per-station Stats */
-    stats_stations(); /* 10Hz */
-    
-    /* Output contribution stats */
-    stats_selection(); /* 10Hz */
-    
-    /* Server threads stats */
-    if(i % 5 == 0) /* 2Hz */
+    if(i % 2 == 0)
     {
+      /** ~2.5Hz **/
+      
+      /* Server threads stats */
       stats_threads();
+    
+      /* UDP Rx Circular Buffer */
+      stats_rxCircularBuffer();
     }
     
     i++;
-    sleep_ms(100);
+    sleep_ms(200);
   }
 }

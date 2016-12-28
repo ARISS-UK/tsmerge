@@ -5,7 +5,7 @@
 #include "merger.h"
 #include "ts.h"
 
-#define RX_BUFFER_LENGTH    1024
+#define RX_BUFFER_LENGTH    2048
 
 typedef struct
 {

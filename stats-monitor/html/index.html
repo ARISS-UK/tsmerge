@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="icon" href="/favicon.ico">
 <title>tsmerge monitor</title>
 <style>
 body {
@@ -64,6 +65,11 @@ body {
     z-index: 100;
     opacity: 1 !important;
 }
+.panel-body > .station-tag {
+  opacity: 0.1;
+  display: block;
+  margin-bottom: 7px;
+}
 </style>
 <link rel="stylesheet" href="libs/bootstrap-3.3.7/css/bootstrap.min.css">
 </head>
@@ -84,6 +90,8 @@ body {
       <span class="glyphicon glyphicon-minus font-blue"></span><span id="graph-legend-2"></span><br>
       <span class="glyphicon glyphicon-minus font-yellow"></span><span id="graph-legend-3"></span><br>
     </div>
+    <br><br>
+    Direct TS Feed: <a href="tcp://hamtv.batc.tv:5679">tcp://hamtv.batc.tv:5679</a>
   </div>
   <div id="stream-player" class="pull-right">
     <div id="stream-player-overlay">Standing by for HAMTV</div>
@@ -115,10 +123,12 @@ var station_contrib_graphOptions = [
   { strokeStyle: 'rgba(255, 0, 0, 1)', fillStyle: 'rgba(255, 0, 0, 0.3)', lineWidth: 3 },
   { strokeStyle: 'rgba(0, 255, 0, 1)', fillStyle: 'rgba(0, 255, 0, 0.3)', lineWidth: 3 },
   { strokeStyle: 'rgba(0, 0, 255, 1)', fillStyle: 'rgba(0, 0, 255, 0.3)', lineWidth: 3 },
-  { strokeStyle: 'rgba(255, 255, 0, 1)', fillStyle: 'rgba(255, 255, 0, 0.3)', lineWidth: 3 }
+  { strokeStyle: 'rgba(255, 255, 0, 1)', fillStyle: 'rgba(255, 255, 0, 0.3)', lineWidth: 3 },
+  { strokeStyle: 'rgba(255, 0, 255, 1)', fillStyle: 'rgba(255, 0, 255, 0.3)', lineWidth: 3 },
 ];
 
-var last_stat = 0;
+var last_server_data = 0;
+var mx_merger = null;
 var rx_stations = [null, null, null, null];
 var rx_stations_timegraph = new SmoothieChart({
   millisPerPixel: 50,
@@ -130,41 +140,28 @@ var rx_stations_timegraph = new SmoothieChart({
     }
   }
 );
+mx_merger = {
+  "data_received": 0,
+  "gui_updated": 0,
+  "output_live": 0
+};
 rx_stations.forEach(function(station, station_index)
 {
   rx_stations[station_index] = {
     /* Cached Panel Selector */
     "panel": null,
     
-    /* merger is reporting station connected */
-    "connected": false,
-    /* station is currently streaming packets */
-    "streaming": false,
-    /* station has been selected as output */
-    "selecting": false,
-    /* station is losing data on network upload */
-    "netlosing": false,
-    
     /* Callsign of station */
     "callsign": "[Station Slot Free]",
     
-    /* Stream counter value (updated by data feed) */
-    "streamed": 0,
-    /* Selected counter value (updated by data feed) */
+    "received": 0,
+    "received_sum": 0,
+    
     "selected": 0,
-    /* Network loss counter value (updated by data feed) */
-    "netlost": 0,
+    "selected_percent": 0,
+    "selected_sum": 0,
     
-    /* Previous stream counter value (updated by UI render) */
-    "previous_streamed": 0,
-    /* Previous selected counter value (updated by UI render) */
-    "previous_selected": 0,
-    /* Previous network loss counter value (updated by UI render) */
-    "netlost_selected": 0,
-    
-    /* Selected share from previous sample */
-    "previous_selected_count": 0,
-    "previous_selected_percent": 0,
+    "lost_sum": 0,
     
     /* Contribution graph data */
     "graph_data": new TimeSeries(),
@@ -185,16 +182,7 @@ var status_counter = 0;
 var player_overlay = true;
 function checkStatus()
 {
-  var check_status = false;
-  rx_stations.forEach(function(station)
-  {
-    if(station.selecting)
-    {
-      check_status = true;
-    }
-  });
-  
-  if(check_status && !status_output)
+  if(mx_merger.output_live && !status_output)
   {
     status_counter++;
     if(status_counter > 10)
@@ -204,7 +192,7 @@ function checkStatus()
     }
   }
 
-  if(!check_status && status_output)
+  if(!mx_merger.output_live && status_output)
   {
     status_counter--;
     if(status_counter < -20)
@@ -255,6 +243,21 @@ function create_stations()
     var panel_body = $('<div></div>')
                         .attr('class', 'panel-body');
     
+    panel_body.append($('<span></span>')
+                        .attr('id','rx_station-selecting-label-'+station_id)
+                        .attr('class','label label-success station-tag')
+                        .text('Station selected as prime receiver'));
+
+    panel_body.append($('<span></span>')
+                        .attr('id','rx_station-streaming-label-'+station_id)
+                        .attr('class','label label-info station-tag')
+                        .text('Station is receiving'));
+
+    panel_body.append($('<span></span>')
+                        .attr('id','rx_station-netloss-label-'+station_id)
+                        .attr('class','label label-warning station-tag')
+                        .text('Upload Network Loss Detected'));
+
     /* Graphic here? */
                         
     panel_body.append($('<hr />'));
@@ -299,54 +302,14 @@ function create_stations()
 
 function render_stations()
 {
-  var selected_total_count = 0;
+  var graphTime = new Date().getTime();
 
   rx_stations.forEach(function(station, station_id)
   {
-    /** Update station status **/
-    /* streamed status */
-    if(station.streamed > station.previous_streamed)
-    {
-      station.streaming = true;
-      station.previous_streamed = station.streamed;
-    }
-    else
-    {
-      station.streaming = false;
-      station.previous_streamed = station.streamed;
-    }
-    /* selecting status */
-    if(station.selected > station.previous_selected)
-    {
-      station.selecting = true;
-      
-      station.previous_selected_count = (station.selected - station.previous_selected);
-      selected_total_count += station.previous_selected_count;
-      
-      station.previous_selected = station.selected;
-    }
-    else
-    {
-      station.selecting = false;
-      station.previous_selected = station.selected;
-      station.previous_selected_count = 0;
-    }
-    /* netlosing status */
-    if(station.netlost > station.previous_netlost)
-    {
-      station.netlosing = true;
-      station.previous_netlost = station.netlost;
-    }
-    else
-    {
-      station.netlosing = false;
-      station.previous_netlost = station.netlost;
-    }
-  
     /* Set panel colour based on station status */
-    if(station.streaming)
+    if(station.received != 0)
     {
-      if(station.selecting)
+      if(station.selected != 0)
       {
         /* Station is streaming and selected for output */
         /* Green panel - set if not already set */
@@ -399,37 +362,53 @@ function render_stations()
       $('#graph-legend-'+station_id)
         .text(station.callsign);
     }
+    
+    /* Set Labels */
+    if(station.selected != 0)
+    {
+      $('#rx_station-selecting-label-'+station_id).fadeTo(50,1);
+    }
+    else
+    {
+      $('#rx_station-selecting-label-'+station_id).fadeTo(50,0.1);
+    }
+    if(station.received != 0)
+    {
+      $('#rx_station-streaming-label-'+station_id).fadeTo(50,1);
+    }
+    else
+    {
+      $('#rx_station-streaming-label-'+station_id).fadeTo(50,0.1);
+    }
+    if(station.lost_sum != 0)
+    {
+      $('#rx_station-netloss-label-'+station_id).fadeTo(50,1);
+    }
+    else
+    {
+      $('#rx_station-netloss-label-'+station_id).fadeTo(50,0.1);
+    }
+
       
     /* Set text stats */
     $('#rx_station-total-'+station_id)
-      .text(station.streamed);
+      .text(station.received_sum);
     $('#rx_station-selected-'+station_id)
-      .text(station.selected);
+      .text(station.selected_sum);
     $('#rx_station-netloss-'+station_id)
-      .text(station.netlost);
+      .text(station.lost_sum);
+
+    if(station.selected > 0)
+    {
+      rx_stations[station_id].graph_data.append(graphTime, station.selected_percent);
+    }
+    else
+    {
+      rx_stations[station_id].graph_data.append(graphTime, 0);
+    }
   });
   
-  var graphTime = new Date().getTime();
-
-  if(selected_total_count > 0)
-  {
-    rx_stations.forEach(function(station, station_id)
-    {
-      rx_stations[station_id].previous_selected_percent = Math.min(100,100*station.previous_selected_count
-                          / selected_total_count);
-      rx_stations[station_id].graph_data.append(graphTime, station.previous_selected_percent);
-    });
-  }
-  else
-  {
-    rx_stations.forEach(function(station, station_id)
-    {
-      rx_stations[station_id].previous_selected_percent = 0;
-      rx_stations[station_id].graph_data.append(graphTime, 0);
-    });
-  }
-  
-  setTimeout(render_stations,100);
+  setTimeout(render_stations,200);
 }
 create_stations();
 render_stations();
@@ -445,11 +424,13 @@ function update_stations(stations)
   {
     rx_stations[station.id].connected = true;
     rx_stations[station.id].callsign = station.callsign;
-    rx_stations[station.id].streamed = station.total_received;
+    rx_stations[station.id].received = station.received;
+    rx_stations[station.id].received_sum = station.received_sum;
     rx_stations[station.id].selected = station.selected;
-    rx_stations[station.id].netlost = station.lost;
+    rx_stations[station.id].selected_percent = station.selected_percent;
+    rx_stations[station.id].selected_sum = station.selected_sum;
+    rx_stations[station.id].lost_sum = Math.max(0,station.lost_sum);
   });
-
 }
 
 var socket = io('https://hamtv.batc.tv', {
@@ -458,30 +439,31 @@ var socket = io('https://hamtv.batc.tv', {
 socket.on('data', function (jdata)
 {
   //console.log(jdata);
-  var data = JSON.parse(jdata);
+  var data;
+  try
+  {
+    data = JSON.parse(jdata);
+  }
+  catch(e)
+  {
+    console.log("Error parsing JSON: "+jdata);
+    return;
+  }
   //console.log(data);
-  last_stat = (new Date());
+  mx_merger.data_received = new Date();
     
   switch(data.type)
   {
     case 'udprxbuffer':
-      var queue = data.head - data.tail;
-      if(queue < 0)
-      {
-        queue = queue + 1024;
-      }
-      $("#rx_buffer_queue").text(queue);
+      $("#rx_buffer_queue").text(data.queue);
       $("#rx_buffer_loss").text(data.loss);
       break;
       
-    case 'stations':
+    case 'merger':
+      mx_merger.output_live = data.live;
       update_stations(data.stations);
       break;
       
-    case 'selection':
-        //TODO
-      break;
-    
     case 'threads':
         var threads_list = $("<ul></ul>");
         for(var i=0; i<data.threads.length; i++)
@@ -507,11 +489,11 @@ socket.on('data', function (jdata)
 
 function checkServer()
 {
-  if(last_stat > (new Date() - 2000))
+  if(mx_merger.data_received > (new Date() - 2000))
   {
     $("#tsmerge_server").text("Running");
   }
-  else if(last_stat > 0)
+  else if(mx_merger.data_received > 0)
   {
     $("#tsmerge_server").text("Stopped");
   }

@@ -114,8 +114,10 @@ static void _reset_station(mx_t *s, int id, char sid[10], uint32_t counter)
 	/* Set connection information */
 	s->station[id].connected = timestamp_ms();
 	s->station[id].counter_initial = counter;
-	s->station[id].total_received = 0;
+	s->station[id].received = 0;
+	s->station[id].received_sum = 0;
 	s->station[id].selected = 0;
+	s->station[id].selected_sum = 0;
 }
 
 static int _lookup_station(mx_t *s, char sid[10])
@@ -269,7 +271,8 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 	}
 	
 	s->station[i].timestamp = timestamp;
-	s->station[i].total_received++;
+	s->station[i].received++;
+	s->station[i].received_sum++;
 }
 
 int mx_update(mx_t *s, int64_t timestamp)
@@ -354,6 +357,7 @@ int mx_update(mx_t *s, int64_t timestamp)
 	
 	/* Update station stats */
 	s->station[best_station].selected++;
+	s->station[best_station].selected_sum++;
 	
 	//printf("s->next_station = %d\n", s->next_station);
 	//printf("s->next_counter = %d\n", s->next_counter);

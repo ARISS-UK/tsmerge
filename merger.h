@@ -16,7 +16,7 @@
 #define MERGER_TCP_TX_PORT      5679
 
 /* Maximum number of stations and packets */
-#define _STATIONS 8
+#define _STATIONS 4
 #define _PACKETS  UINT16_MAX
 
 /* Station timeout in milliseconds */
@@ -82,10 +82,12 @@ typedef struct {
 	uint32_t counter_initial;
 	
 	/* Total packets received (to allow net loss calculation) */
-	uint32_t total_received;
+	uint32_t received;
+	uint32_t received_sum;
 	
 	/* Number of times the station has been selected as best */
 	uint32_t selected;
+        uint32_t selected_sum;
 	
 	/* The receive time of the last packet (in ms) */
 	int64_t timestamp;
