@@ -4,5 +4,6 @@ tsinfo
 tssim
 *.o
 *.ts
+logs/
 merged-*.ts
 merged-*.csv
