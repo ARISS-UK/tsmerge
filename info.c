@@ -20,7 +20,7 @@ void _print_usage(void)
 {
 	printf(
 		"\n"
-		"Usage: tsinfo [options] INPUT\n"
+		"Usage: cat <ts file> | tsinfo [options]\n"
 		"\n"
 		"  -V, --version          Print version string and exit.\n"
 		"  -d, --dump             Dump CSV of TS Packet PCR & Continuity Counter Data.\n"
