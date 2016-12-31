@@ -9,6 +9,25 @@
 #include "ts.h"
 #include "info.h"
 
+void _print_version(void)
+{
+	printf(
+		"tsinfo (tsmerge) "BUILD_VERSION" (built "BUILD_DATE")\n"
+	);
+}
+
+void _print_usage(void)
+{
+	printf(
+		"\n"
+		"Usage: tsinfo [options] INPUT\n"
+		"\n"
+		"  -V, --version          Print version string and exit.\n"
+		"  -d, --dump             Dump CSV of TS Packet PCR & Continuity Counter Data.\n"
+		"\n"
+	);
+}
+
 static void _reset_info(ts_info_t *ts_info)
 {
     ts_info->first_pcr_base = 0;
@@ -32,21 +51,55 @@ int main(int argc, char *argv[])
 	uint8_t data[TS_PACKET_SIZE];
 	ts_header_t ts;
 	ts_info_t ts_info;
+	
+	int opt;
+	
 	FILE *fp;
+        int csvEnabled = 0;
 	char csvText[128];
         char csvFilename[64];
 	uint8_t csvTextSize;
         time_t now;
         char stime[20];
-	
+
+	static const struct option long_options[] = {
+		{ "version",     no_argument, 0, 'V' },
+		{ "dump",        no_argument, 0, 'd' },
+		{ 0,             0,           0,  0  }
+	};
+
+	while((c = getopt_long(argc, argv, "Vd", long_options, &opt)) != -1)
+	{
+		switch(c)
+		{
+		case 'V': /* --version */
+                        _print_version();
+			exit(0);
+			break;
+		
+		case 'd': /* --dump */
+			csvEnabled = 1;
+			break;
+		
+		case '?':
+			_print_usage();
+			return(0);
+		}
+	}
+
 	_reset_info(&ts_info);
 
-	time(&now);
-	strftime(stime, sizeof stime, "%F_%TZ", gmtime(&now));
-	snprintf(csvFilename,63,"tsinfo-%s.csv",stime);
+	if(csvEnabled == 1)
+	{
+		time(&now);
+		strftime(stime, sizeof stime, "%F_%TZ", gmtime(&now));
+		snprintf(csvFilename,63,"tsinfo-%s.csv",stime);
 
-	fp = fopen(csvFilename, "a+");
-	
+		printf("Dumping TS description CSV to: %s\n", csvFilename);
+
+		fp = fopen(csvFilename, "a+");
+	}
+
 	/* Stream the data */
 	while(fread(data, 1, TS_PACKET_SIZE, f) == TS_PACKET_SIZE)
 	{
@@ -100,20 +153,25 @@ int main(int argc, char *argv[])
 		    }
 		}
 
-		/* Create text [packet counter, packet pcr base, packet pcr extension, packet pid, packet continuity counter] */
-		csvTextSize = snprintf(csvText, 127, "%"PRIu32",%"PRIu64",%"PRIu16",%"PRIu16",%"PRIu8"\n",
-			ts_info.packet_count,
-			ts.pcr_base,
-			ts.pcr_extension,
-                        ts.pid,
-			ts.continuity_counter
-		);
-		/* Try to send the new data to the viewer */
-		(void)fwrite(csvText, csvTextSize, 1, fp);
+		if(csvEnabled == 1)
+		{
+			/* Create text [packet counter, packet pcr base, packet pcr extension, packet pid, packet continuity counter] */
+			csvTextSize = snprintf(csvText, 127, "%"PRIu32",%"PRIu64",%"PRIu16",%"PRIu16",%"PRIu8"\n",
+				ts_info.packet_count,
+				ts.pcr_base,
+				ts.pcr_extension,
+                	        ts.pid,
+				ts.continuity_counter
+			);
+			(void)fwrite(csvText, csvTextSize, 1, fp);
+		}
 	}
 	
-	fclose(fp);
-	
+	if(csvEnabled == 1)
+	{
+		fclose(fp);
+	}
+
 	if(f != stdin)
 	{
 		fclose(f);
