@@ -95,6 +95,27 @@ static void stats_rxCircularBuffer(void)
   );
 }
 
+static void stats_resetLogTimestamp(void)
+{
+  time_t now;
+  char stime[20];
+
+  if(file_viewer.tsenabled || file_viewer.csvenabled)
+  {
+    /* Generate timestamp string */
+    time(&now);
+    strftime(stime, sizeof stime, "%F_%TZ", gmtime(&now));
+  }
+  if(file_viewer.tsenabled)
+  {
+    snprintf(file_viewer.tsfilename,63,"logs/merged-%s.ts",stime);
+  }
+  if(file_viewer.csvenabled)
+  {
+    snprintf(file_viewer.csvfilename,63,"logs/merged-%s.csv",stime);
+  }
+}
+
 typedef struct {
   int station;
   uint32_t counter;
@@ -120,6 +141,11 @@ static void stats_merger(void)
       previous_merger_state.station = merger.next_station;
       previous_merger_state.counter = merger.next_counter;
     }
+  }
+
+  if(merger_running == 0)
+  {
+    stats_resetLogTimestamp();
   }
   
   tmpString[0] = '\0';
@@ -216,6 +242,11 @@ void *merger_stats(void* arg)
 {
   (void) arg;
   int i = 0;
+
+  /* Enable file logging */
+  file_viewer.tsenabled = 1;
+  file_viewer.csvenabled = 1;
+  stats_resetLogTimestamp();
   
   while(1)
   {

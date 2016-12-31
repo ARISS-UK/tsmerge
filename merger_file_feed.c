@@ -34,12 +34,12 @@ void *merger_file_feed(void* arg)
 		if(file_viewer.tsenabled || file_viewer.csvenabled)
 		{
 	    p = NULL;
-	    timestamp = timestamp_ms();
 		    
 	    /* See if there is any data still to send to this viewer */
 			pthread_mutex_lock(&merger.lock);
 			while((p = mx_next(&merger, file_viewer.last_station, file_viewer.last_counter)) != NULL)
 			{
+	    		timestamp = timestamp_ms();
 			  if(file_viewer.tsenabled)
 			  {
 			    /* Append TS segment to TS file */
