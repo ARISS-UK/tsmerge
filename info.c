@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <inttypes.h>
+#include <time.h>
 #include "ts.h"
 #include "info.h"
 
@@ -30,8 +32,20 @@ int main(int argc, char *argv[])
 	uint8_t data[TS_PACKET_SIZE];
 	ts_header_t ts;
 	ts_info_t ts_info;
+	FILE *fp;
+	char csvText[128];
+        char csvFilename[64];
+	uint8_t csvTextSize;
+        time_t now;
+        char stime[20];
 	
 	_reset_info(&ts_info);
+
+	time(&now);
+	strftime(stime, sizeof stime, "%F_%TZ", gmtime(&now));
+	snprintf(csvFilename,63,"tsinfo-%s.csv",stime);
+
+	fp = fopen(csvFilename, "a+");
 	
 	/* Stream the data */
 	while(fread(data, 1, TS_PACKET_SIZE, f) == TS_PACKET_SIZE)
@@ -85,7 +99,19 @@ int main(int argc, char *argv[])
 		        ts_info.pcr_extension_used = 1;
 		    }
 		}
+
+		/* Create text [timestamp_ms, station id, station name, station packet counter, packet pcr base, packet pcr extension] */
+		csvTextSize = snprintf(csvText, 127, "%"PRIu32",%"PRIu64",%"PRIu16",%"PRIu8"\n",
+			ts_info.packet_count,
+			ts.pcr_base,
+			ts.pcr_extension,
+			ts.continuity_counter
+		);
+		/* Try to send the new data to the viewer */
+		(void)fwrite(csvText, csvTextSize, 1, fp);
 	}
+	
+	fclose(fp);
 	
 	if(f != stdin)
 	{
