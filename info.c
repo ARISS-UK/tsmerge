@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 		{
 		case 'V': /* --version */
                         _print_version();
-			exit(0);
+			return 0;
 			break;
 		
 		case 'd': /* --dump */
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 		
 		case '?':
 			_print_usage();
-			return(0);
+			return 0;
 		}
 	}
 
