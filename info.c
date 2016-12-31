@@ -101,10 +101,11 @@ int main(int argc, char *argv[])
 		}
 
 		/* Create text [timestamp_ms, station id, station name, station packet counter, packet pcr base, packet pcr extension] */
-		csvTextSize = snprintf(csvText, 127, "%"PRIu32",%"PRIu64",%"PRIu16",%"PRIu8"\n",
+		csvTextSize = snprintf(csvText, 127, "%"PRIu32",%"PRIu64",%"PRIu16",%"PRIu16",%"PRIu8"\n",
 			ts_info.packet_count,
 			ts.pcr_base,
 			ts.pcr_extension,
+                        ts.pid,
 			ts.continuity_counter
 		);
 		/* Try to send the new data to the viewer */
