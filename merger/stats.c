@@ -143,7 +143,7 @@ static void stats_merger(void)
   }
   
   tmpString[0] = '\0';
-  sprintf(tmpString,"{\"type\":\"merger\",\"live\":%d,\"selected\":%d,\"stations\":[",
+  sprintf(tmpString,"{\"type\":\"merger\",\"version\":\""BUILD_VERSION"\",\"built\":\""BUILD_DATE"\",\"live\":%d,\"selected\":%d,\"stations\":[",
     merger_running,
     merger.next_station
   );

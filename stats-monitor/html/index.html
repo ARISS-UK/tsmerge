@@ -118,6 +118,8 @@ body {
   <div class="col-md-3">
     <h2>Server Status</h2>
     tsmerge: <span id="tsmerge_server"></span><br />
+     - version: <span id="tsmerge_version"></span><br />
+     - built: <span id="tsmerge_built"></span><br />
     RX Buffer Queue: <span id="rx_buffer_queue"></span> packets<br />
     RX Buffer Loss : <span id="rx_buffer_loss"></span> packets<br />
     <a href="/tsmerge/logs/" target="_blank">Merger Logs</a>
@@ -506,6 +508,8 @@ socket.on('data', function (jdata)
       
     case 'merger':
       mx_merger.output_live = data.live;
+      $("#tsmerge_version").text(data.version);
+      $("#tsmerge_built").text(data.built);
       update_stations(data.stations);
       break;
       
