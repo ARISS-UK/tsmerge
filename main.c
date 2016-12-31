@@ -13,6 +13,7 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <getopt.h>
 #include "main.h"
 #include "timing.h"
 #include "viewer.h"
@@ -30,9 +31,48 @@ rxBuffer_t rxBuffer;
 /* See main.h for this macro to define and declare the threads */
 MX_DECLARE_THREADS();
 
+void _print_version(void)
+{
+    printf(
+        "tsmerge (tsmerge) "BUILD_VERSION" (built "BUILD_DATE")\n"
+    );
+}
+
+void _print_usage(void)
+{
+    printf(
+        "\n"
+        "Usage: tsmerge [options]\n"
+        "\n"
+        "  -V, --version          Print version string and exit.\n"
+        "\n"
+    );
+}
+
 int main(int argc, char *argv[])
 {
     int i;
+    int c;
+    int opt;
+
+    static const struct option long_options[] = {
+        { "version",     no_argument, 0, 'V' },
+        { 0,             0,           0,  0  }
+    };
+
+    while((c = getopt_long(argc, argv, "Vd", long_options, &opt)) != -1)
+    {
+        switch(c)
+        {
+            case 'V': /* --version */
+                _print_version();
+                return 0;
+
+            case '?':
+                _print_usage();
+                return 0;
+        }
+    }
 	
     /* Set up file output */
     memset(&file_viewer, 0, sizeof(file_viewer));
