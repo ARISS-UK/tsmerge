@@ -41,6 +41,14 @@ body {
 .font-yellow {
   color: rgba(255, 255, 0, 1);
 }
+.bold {
+  font-weight: bold;
+}
+.align-right {
+  display: block;
+  float: right;
+  text-align: right;
+}
 #column-contrib-graph {
   display: inline-block;
 }
@@ -117,16 +125,17 @@ body {
 <div class="row">
   <div class="col-md-3">
     <h2>Server Status</h2>
-    tsmerge: <span id="tsmerge_server"></span><br />
-     - version: <span id="tsmerge_version"></span><br />
-     - built: <span id="tsmerge_built"></span><br />
-    RX Buffer Queue: <span id="rx_buffer_queue"></span> packets<br />
-    RX Buffer Loss : <span id="rx_buffer_loss"></span> packets<br />
+    tsmerge: <span id="tsmerge_server" class="align-right bold"></span><br />
+    version: <span class="align-right"><span id="tsmerge_version"></span> (<span id="tsmerge_built"></span>)</span><br />
+    RX Buffer Queue: <span id="rx_buffer_queue" class="align-right bold"></span><br />
+    RX Buffer Loss : <span id="rx_buffer_loss" class="align-right bold"></span><br />
     <a href="/tsmerge/logs/" target="_blank">Merger Logs</a>
   </div>
-  <div class="col-md-4">
+  <div class="col-md-3">
     <h4>Threads</h4>
-    <div id="server_threads"></div>
+    <div id="server_threads">
+      <ul id="server_threads_list"></ul>
+    </div>
   </div>
 </div>
 </div>
@@ -151,6 +160,7 @@ var station_contrib_graphOptions = [
 
 var last_server_data = 0;
 var mx_merger = null;
+var thread_stats = [];
 var rx_stations = [null, null, null, null];
 var rx_stations_timegraph = new SmoothieChart({
   millisPerPixel: 50,
@@ -517,17 +527,21 @@ socket.on('data', function (jdata)
       var threads_list = $("<ul></ul>");
       for(var i=0; i<data.threads.length; i++)
       {
-        threads_list.append(
-          $("<li></li>").text(
-            data.threads[i].name +
-            ": "+
-            data.threads[i].cpu_percent +
-            "%"
-          )
-        );
+        if(typeof thread_stats[data.threads[i].id] == "undefined")
+        {
+          $("#server_threads_list")
+            .append($("<li></li>")
+              .text(data.threads[i].name+": ")
+              .append($("<span></span>")
+                .attr('id',"thread-stat-"+data.threads[i].id)
+                .attr('class',"align-right")
+              )
+            );
+                
+          thread_stats[data.threads[i].id] = $("#thread-stat-"+data.threads[i].id);
+        }
+        thread_stats[data.threads[i].id].text(data.threads[i].cpu_percent+"%");
       }
-      $("#server_threads").empty();
-      $("#server_threads").append(threads_list);
       break;
       
     default:
