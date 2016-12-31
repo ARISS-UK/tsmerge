@@ -1,7 +1,7 @@
 
 
 CC = gcc
-CFLAGS = -Og -Wall
+CFLAGS = -gdwarf-3 -Og -Wall
 CFLAGS += -D BUILD_VERSION="\"$(shell git describe --dirty --always)\""	\
 		-D BUILD_DATE="\"$(shell date '+%Y-%m-%d %H:%M:%S')\""
 
