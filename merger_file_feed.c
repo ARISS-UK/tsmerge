@@ -61,12 +61,15 @@ void *merger_file_feed(void* arg)
 				{
 			    /* Append CSV segment description to CSV file */
 				  f = fopen(file_viewer.csvfilename, "a+");
-				  /* Create text [timestamp_ms, station id, station name, station counter] */
-			    csvTextSize = snprintf(csvText, 127, "%ld,%d,%s,%d\n",
+				  /* Create text [timestamp_ms, station id, station name, station packet counter, packet pcr base, packet pcr extension] */
+			    csvTextSize = snprintf(csvText, 127, "%"PRIu64",%"PRIu32",%s,%"PRIu32",%"PRIu64",%"PRIu16"\n",
 			              timestamp,
 			              p->station,
 			              merger.station[p->station].sid,
-			              p->counter
+			              p->counter,
+				      p->header.pcr_base,
+                                      p->header.pcr_extension
+                                      
 			    );
 				  /* Try to send the new data to the viewer */
 				  r = fwrite(csvText, csvTextSize, 1, f);
