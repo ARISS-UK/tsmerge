@@ -1,11 +1,13 @@
 
 #include <stdint.h>
-#include "ts/ts.h"
+#include "../ts/ts.h"
 
 #ifndef _MERGER_H
 #define _MERGER_H
 
 #include <pthread.h>
+#include "../ts/ts.h"
+#include "../timing/timing.h"
 
 #define MERGER_PCR_PID          256
 
@@ -123,6 +125,14 @@ typedef struct {
 
 /* the TS merger state */
 mx_t merger;
+
+#include "viewer.h"
+#include "input_socket.h"
+#include "input_buffer.h"
+#include "input_feed.h"
+#include "output_socket.h"
+#include "output_feed.h"
+#include "output_log.h"
 
 void *merger_mx(void*);
 

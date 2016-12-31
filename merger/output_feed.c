@@ -7,14 +7,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
-#include "main.h"
-#include "timing.h"
-#include "viewer.h"
 #include "merger.h"
-#include "merger_rx_socket.h"
-#include "merger_tx_feed.h"
-#include "merger_tx_socket.h"
-
 
 static void _close_connection(viewer_t *viewers, int i)
 {

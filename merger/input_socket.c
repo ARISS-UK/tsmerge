@@ -7,14 +7,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "main.h"
-#include "timing.h"
-#include "viewer.h"
 #include "merger.h"
-#include "merger_rx_socket.h"
-#include "merger_tx_feed.h"
-#include "merger_tx_socket.h"
-#include "merger_rx_buffer.h"
 
 /* This function is run on a thread, started from main()
  *

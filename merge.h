@@ -27,8 +27,6 @@ typedef struct mx_thread_t {
 	
 } mx_thread_t;
 
-
-
 /* Declare threads */
 /** { [pthread_t], name[64], function, arg, last_cpu, last_cpu_t } **/
 #define MX_THREAD_NUMBER   7

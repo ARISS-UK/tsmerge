@@ -8,17 +8,17 @@ CFLAGS += -D BUILD_VERSION="\"$(shell git describe --dirty --always)\""	\
 ## tsmerge
 
 TSMERGE_BIN = tsmerge
-TSMERGE_SRCS = main.c \
+TSMERGE_SRCS = merge.c \
                 ts/ts.c \
-                timing.c \
-                merger.c \
-                merger_stats.c \
-                merger_rx_feed.c \
-                merger_rx_socket.c \
-                merger_tx_feed.c \
-                merger_tx_socket.c \
-                merger_file_feed.c \
-                merger_rx_buffer.c
+                timing/timing.c \
+                merger/merger.c \
+                merger/stats.c \
+                merger/input_socket.c \
+                merger/input_feed.c \
+		merger/input_buffer.c \
+		merger/output_socket.c \
+		merger/output_feed.c \
+		merger/output_log.c
 
 TSMERGE_LIBS = -lpthread
 

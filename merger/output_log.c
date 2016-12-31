@@ -2,14 +2,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
-#include <sys/types.h>
-#include "main.h"
-#include "timing.h"
-#include "viewer.h"
+#include <inttypes.h>
 #include "merger.h"
-#include "merger_rx_socket.h"
-#include "merger_tx_feed.h"
-#include "merger_tx_socket.h"
 
 /* This function is run on a thread, started from main()
  *

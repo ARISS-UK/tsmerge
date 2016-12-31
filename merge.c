@@ -14,17 +14,17 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <getopt.h>
-#include "main.h"
-#include "timing.h"
-#include "viewer.h"
-#include "merger.h"
-#include "merger_stats.h"
-#include "merger_rx_buffer.h"
-#include "merger_rx_socket.h"
-#include "merger_rx_feed.h"
-#include "merger_tx_socket.h"
-#include "merger_tx_feed.h"
-#include "merger_file_feed.h"
+#include "merge.h"
+#include "timing/timing.h"
+#include "merger/merger.h"
+#include "merger/viewer.h"
+#include "merger/stats.h"
+#include "merger/input_socket.h"
+#include "merger/input_feed.h"
+#include "merger/input_buffer.h"
+#include "merger/output_socket.h"
+#include "merger/output_feed.h"
+#include "merger/output_log.h"
 
 rxBuffer_t rxBuffer;
 

@@ -2,8 +2,6 @@
 #include <stdint.h>
 #include <string.h>
 #include "merger.h"
-#include "timing.h"
-#include "merger_rx_buffer.h"
 
 /* This function is run on a thread, started from main()
  *

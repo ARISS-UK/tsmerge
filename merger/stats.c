@@ -7,15 +7,9 @@
 #include <sys/socket.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "main.h"
-#include "timing.h"
-#include "viewer.h"
+#include <pthread.h>
+#include "../merge.h" /* TODO: Rework this to not require revese dependency */
 #include "merger.h"
-#include "merger_stats.h"
-#include "merger_rx_buffer.h"
-#include "merger_rx_socket.h"
-#include "merger_tx_feed.h"
-#include "merger_tx_socket.h"
 
 #define MERGER_STATS_UDP_PORT   5680
 

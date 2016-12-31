@@ -3,8 +3,6 @@
 #include <stdint.h>
 #include <string.h>
 #include "merger.h"
-#include "timing.h"
-#include "viewer.h"
 
 #include <stdlib.h> /* testing only */
 
