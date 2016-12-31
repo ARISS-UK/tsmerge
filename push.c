@@ -19,7 +19,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <signal.h>
-#include "ts.h"
+#include "ts/ts.h"
 
 typedef enum {
 	MODE_MX,

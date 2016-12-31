@@ -9,7 +9,7 @@ CFLAGS += -D BUILD_VERSION="\"$(shell git describe --dirty --always)\""	\
 
 TSMERGE_BIN = tsmerge
 TSMERGE_SRCS = main.c \
-                ts.c \
+                ts/ts.c \
                 timing.c \
                 merger.c \
                 merger_stats.c \
@@ -26,18 +26,18 @@ TSMERGE_LIBS = -lpthread
 
 TSPUSH_BIN = tspush
 TSPUSH_SRCS = push.c \
-                ts.c
+                ts/ts.c
 
 ## tsinfo
 
 TSINFO_BIN = tsinfo
 TSINFO_SRCS = info.c \
-                ts.c
+                ts/ts.c
 ## tssim
 
 TSSIM_BIN = tssim
 TSSIM_SRCS = sim.c \
-                ts.c
+                ts/ts.c
 
 ### Targets        
 

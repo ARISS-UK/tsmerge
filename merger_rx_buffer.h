@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 #include "merger.h"
-#include "ts.h"
+#include "ts/ts.h"
 
 #define RX_BUFFER_LENGTH    2048
 

@@ -6,7 +6,7 @@
 #include <getopt.h>
 #include <inttypes.h>
 #include <time.h>
-#include "ts.h"
+#include "ts/ts.h"
 #include "info.h"
 
 void _print_version(void)

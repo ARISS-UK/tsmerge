@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "ts.h"
+#include "ts/ts.h"
 #include "merger_rx_buffer.h"
 
 void rxBufferInit(void *buffer_void_ptr)

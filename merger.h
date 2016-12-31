@@ -1,6 +1,6 @@
 
 #include <stdint.h>
-#include "ts.h"
+#include "ts/ts.h"
 
 #ifndef _MERGER_H
 #define _MERGER_H
