@@ -19,9 +19,10 @@ body {
 }
 .rx_station-stat {
   display: block;
-  float: right;
-  text-align: right;
-  width: 75px;
+  /*float: right;
+  text-align: right;*/
+  
+  width: 65px;
   font-size: 1.1em;
   font-weight: bold;
 }
@@ -161,7 +162,7 @@ var station_contrib_graphOptions = [
 var last_server_data = 0;
 var mx_merger = null;
 var thread_stats = [];
-var rx_stations = [null, null, null, null];
+var rx_stations = [null, null, null, null, null, null];
 var rx_stations_timegraph = new SmoothieChart({
   millisPerPixel: 50,
   grid: {
@@ -278,17 +279,17 @@ function create_stations()
     panel_body.append($('<span></span>')
                         .attr('id','rx_station-selecting-label-'+station_id)
                         .attr('class','label label-success station-tag')
-                        .text('Station selected as prime receiver'));
+                        .text('Prime Receiver'));
 
     panel_body.append($('<span></span>')
                         .attr('id','rx_station-streaming-label-'+station_id)
                         .attr('class','label label-info station-tag')
-                        .text('Station is receiving'));
+                        .text('Receiving Data'));
 
     panel_body.append($('<span></span>')
                         .attr('id','rx_station-netloss-label-'+station_id)
                         .attr('class','label label-warning station-tag')
-                        .text('Upload Network Loss Detected'));
+                        .text('Upload Network Loss'));
 
     /* Graphic here? */
                         
@@ -299,32 +300,28 @@ function create_stations()
                         .text('Last Active: '));
     panel_body.append($('<span></span>')
                         .attr('id','rx_station-last_updated-'+station_id)
-                        .attr('class', 'rx_station-stat'))
-                        .append($('<br />'));
+                        .attr('class', 'rx_station-stat'));
     
     panel_body.append($('<span></span>')
                         .attr('class', 'rx_station-stat-label')
                         .text('TS Packets: '));
     panel_body.append($('<span></span>')
                         .attr('id','rx_station-total-'+station_id)
-                        .attr('class', 'rx_station-stat'))
-                        .append($('<br />'));
+                        .attr('class', 'rx_station-stat'));
     
     panel_body.append($('<span></span>')
                         .attr('class', 'rx_station-stat-label')
-                        .text('TS Network Loss: '));
+                        .text('Upload Loss: '));
     panel_body.append($('<span></span>')
                         .attr('id','rx_station-netloss-'+station_id)
-                        .attr('class', 'rx_station-stat'))
-                        .append($('<br />'));
+                        .attr('class', 'rx_station-stat'));
     
     panel_body.append($('<span></span>')
                         .attr('class', 'rx_station-stat-label')
-                        .text('PCR Segments Used: '));
+                        .text('PCRs Used: '));
     panel_body.append($('<span></span>')
                         .attr('id','rx_station-selected-'+station_id)
-                        .attr('class', 'rx_station-stat')
-                        .append($('<br />')));
+                        .attr('class', 'rx_station-stat'));
     
     station.panel.append(panel_body);
     col.append(station.panel);
@@ -574,14 +571,14 @@ function shortSince(timestamp)
 {
   if(typeof timestamp == "undefined")
   {
-    return "";
+    return "never";
   }
 
   var seconds = Math.floor((new Date() - new Date(timestamp)) / 1000);
 
   if(seconds > 500000)
   {
-    return "";
+    return "never";
   }
 
   var interval = Math.floor(seconds / 86400);
