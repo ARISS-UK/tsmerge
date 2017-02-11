@@ -19,7 +19,7 @@
 
 /* Maximum number of stations and packets */
 #define _STATIONS 8
-#define _PACKETS  UINT16_MAX
+#define _PACKETS  (UINT16_MAX+1)
 
 /* Station timeout in milliseconds */
 #define _TIMEOUT_MS 10000
