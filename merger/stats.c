@@ -167,9 +167,10 @@ static void stats_merger(void)
 
     encoded_sid = url_encode(merger.station[i].sid);
     
-    sprintf(tmpString,"%s{\"id\":%d,\"callsign\":\"%s\",\"last_updated\":%ld,\"received\":%d,\"received_sum\":%d,\"selected\":%d,\"selected_percent\":%d,\"selected_sum\":%d,\"lost_sum\":%d}",
+    sprintf(tmpString,"%s{\"id\":%d,\"enabled\":%d,\"callsign\":\"%s\",\"last_updated\":%ld,\"received\":%d,\"received_sum\":%d,\"selected\":%d,\"selected_percent\":%d,\"selected_sum\":%d,\"lost_sum\":%d}",
       tmpString,
       i,
+      merger.station[i].enabled,
       encoded_sid,
       merger.station[i].timestamp,
       merger.station[i].received,
