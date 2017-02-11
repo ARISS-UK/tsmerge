@@ -18,7 +18,7 @@
 #define MERGER_TCP_TX_PORT      5679
 
 /* Maximum number of stations and packets */
-#define _STATIONS 6
+#define _STATIONS 8
 #define _PACKETS  UINT16_MAX
 
 /* Station timeout in milliseconds */
@@ -67,9 +67,14 @@ typedef struct {
 } mx_packet_t;
 
 typedef struct {
+	/* Enabled */
+        uint8_t enabled;
 	
 	/* The station ID */
 	char sid[10];
+	
+	/* The station PSK */
+	char psk[10];
 	
 	/* The current position in the stream */
 	uint32_t current;

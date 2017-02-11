@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "merger.h"
+#include "stations.h"
 
 #include <stdlib.h> /* testing only */
 
@@ -94,14 +95,8 @@ static mx_packet_t *_next_segment(mx_t *s, int station)
 	return(left);
 }
 
-static void _reset_station(mx_t *s, int id, char sid[10], uint32_t counter)
+static void _reset_station(mx_t *s, int id, uint32_t counter)
 {
-	/* Zero the station memory */
-	memset(&s->station[id], 0, sizeof(mx_station_t));
-	
-	/* Set the callsign */
-	memcpy(s->station[id].sid, sid, 10);
-	
 	/* The memset 0 creates a false positive 'valid' packet for station 0 */
 	s->station[id].packet[0].counter = 1;
 	
@@ -118,15 +113,14 @@ static void _reset_station(mx_t *s, int id, char sid[10], uint32_t counter)
 	s->station[id].selected_sum = 0;
 }
 
-static int _lookup_station(mx_t *s, char sid[10])
+static int _auth_station(mx_t *s, char psk[10])
 {
 	int i;
 	
 	/* Search for the station ID, return index if found or -1 */
 	for(i = 0; i < _STATIONS; i++)
 	{
-		if(strncmp(s->station[i].sid, sid, 10) == 0 &&
-		   s->station[i].timestamp > s->timestamp - _TIMEOUT_MS)
+		if((s->station[i].enabled == 1) && (strncmp(s->station[i].psk, psk, strlen(s->station[i].psk)) == 0))
 		{
 			/* Found a matching station */
 			return(i);
@@ -134,39 +128,6 @@ static int _lookup_station(mx_t *s, char sid[10])
 	}
 	
 	return(-1);
-}
-
-static int _new_station(mx_t *s, char sid[10])
-{
-	int i;
-	
-	/* Search for an empty slot */
-	for(i = 0; i < _STATIONS; i++)
-	{
-		if(s->station[i].timestamp <= s->timestamp - _TIMEOUT_MS)
-		{
-			/* Found a timed out station */
-			return(i);
-		}
-		
-		if(s->station[i].sid[0] == '\0')
-		{
-			/* Found an empty station */
-			return(i);
-		}
-	}
-	
-	/* No free slots for this station */
-	
-	return(-1);
-}
-
-void mx_init(mx_t *s, uint16_t pcr_pid)
-{
-	memset(s, 0, sizeof(mx_t));
-	
-	s->pcr_pid = pcr_pid;
-	s->next_station = -1;
 }
 
 void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
@@ -186,51 +147,37 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 		return;
 	}
 	
+	/* Lookup the station number */
+	i = _auth_station(s, (char *) &data[0x06]);
+	
+	if(i < 0)
+	{
+		printf("Unrecognised PSK: %.10s\n", (char *) &data[0x06]);
+		return;
+	}
+	
 	/* Counter (4 bytes little-endian) */
 	counter = (uint32_t) data[0x05] << 24
 	        | (uint32_t) data[0x04] << 16
 	        | (uint32_t) data[0x03] <<  8
 	        | (uint32_t) data[0x02] <<  0;
 	
-	/* Lookup the station number */
-	i = _lookup_station(s, (char *) &data[0x06]);
+	/* Existing station, ensure this new packet
+	 * has a counter within the expected bounds */
+	d = (int32_t) counter - (int32_t) s->station[i].current;
 	
-	if(i < 0)
+	if(s->station[i].connected==0 || d < -0xFFFF || d > 0xFFFF)
 	{
-		/* This is a new station, try to register it */
-		i = _new_station(s, (char *) &data[0x06]);
-		
-		/* No free station slots! */
-		if(i < 0)
-		{
-			printf("No free slots for new station %.10s\n", (char *) &data[0x06]);
-			return;
-		}
-		
-		printf("New station %.10s got slot %d\n", (char *) &data[0x06], i);
-		
-		/* Reset the station */
-		_reset_station(s, i, (char *) &data[0x06], counter);
+		/* Never connected, or the counter is too far out */
+		printf("Station %d counter reset\n", i);
+		_reset_station(s, i, counter);
 	}
-	else
+	else if(d <= 0)
 	{
-		/* Existing station, ensure this new packet
-		 * has a counter within the expected bounds */
-		d = (int32_t) counter - (int32_t) s->station[i].current;
-		
-		if(d < -0xFFFF || d > 0xFFFF)
-		{
-			/* The counter is too far out, assume station has restarted */
-			printf("Station %d counter reset\n", i);
-			_reset_station(s, i, (char *) &data[0x06], counter);
-		}
-		else if(d <= 0)
-		{
-			/* The current stream position has already moved past
-			 * this packet, it's too late to process it */
-			printf("Dropping late packet for station %d\n", i);
-			return;
-		}
+		/* The current stream position has already moved past
+		 * this packet, it's too late to process it */
+		printf("Dropping late packet for station %d\n", i);
+		return;
 	}
 	
 	
@@ -363,6 +310,69 @@ int mx_update(mx_t *s, int64_t timestamp)
 	return(1);
 }
 
+void _setup_stations(mx_t *s)
+{
+  pthread_mutex_lock(&merger.lock);
+
+  /* Zero out struct */
+  memset(&s->station[0], 0, sizeof(mx_station_t));
+  /* Set station-specific fields */
+  s->station[0].enabled = STATION_0_ENABLED;
+  strncpy(s->station[0].sid, STATION_0_SID, 10);
+  strncpy(s->station[0].psk, STATION_0_PSK, 10);
+
+  /* Zero out struct */
+  memset(&s->station[1], 0, sizeof(mx_station_t));
+  /* Set station-specific fields */
+  s->station[1].enabled = STATION_1_ENABLED;
+  strncpy(s->station[1].sid, STATION_1_SID, 10);
+  strncpy(s->station[1].psk, STATION_1_PSK, 10);
+
+  /* Zero out struct */
+  memset(&s->station[2], 0, sizeof(mx_station_t));
+  /* Set station-specific fields */
+  s->station[2].enabled = STATION_2_ENABLED;
+  strncpy(s->station[2].sid, STATION_2_SID, 10);
+  strncpy(s->station[2].psk, STATION_2_PSK, 10);
+
+  /* Zero out struct */
+  memset(&s->station[3], 0, sizeof(mx_station_t));
+  /* Set station-specific fields */
+  s->station[3].enabled = STATION_3_ENABLED;
+  strncpy(s->station[3].sid, STATION_3_SID, 10);
+  strncpy(s->station[3].psk, STATION_3_PSK, 10);
+
+  /* Zero out struct */
+  memset(&s->station[4], 0, sizeof(mx_station_t));
+  /* Set station-specific fields */
+  s->station[4].enabled = STATION_4_ENABLED;
+  strncpy(s->station[4].sid, STATION_4_SID, 10);
+  strncpy(s->station[4].psk, STATION_4_PSK, 10);
+
+  /* Zero out struct */
+  memset(&s->station[5], 0, sizeof(mx_station_t));
+  /* Set station-specific fields */
+  s->station[5].enabled = STATION_5_ENABLED;
+  strncpy(s->station[5].sid, STATION_5_SID, 10);
+  strncpy(s->station[5].psk, STATION_5_PSK, 10);
+
+  /* Zero out struct */
+  memset(&s->station[6], 0, sizeof(mx_station_t));
+  /* Set station-specific fields */
+  s->station[6].enabled = STATION_6_ENABLED;
+  strncpy(s->station[6].sid, STATION_6_SID, 10);
+  strncpy(s->station[6].psk, STATION_6_PSK, 10);
+
+  /* Zero out struct */
+  memset(&s->station[7], 0, sizeof(mx_station_t));
+  /* Set station-specific fields */
+  s->station[7].enabled = STATION_7_ENABLED;
+  strncpy(s->station[7].sid, STATION_7_SID, 10);
+  strncpy(s->station[7].psk, STATION_7_PSK, 10);
+
+  pthread_mutex_unlock(&merger.lock);
+}
+
 void *merger_mx(void* arg)
 {
     (void) arg;
@@ -373,6 +383,8 @@ void *merger_mx(void* arg)
     /* Passing the station id as well would remove the need to loop over all stations
      * as it would only need to compare the current versus the new one,
      * for being either newer or less lossy. */
+
+    _setup_stations(&merger);
     
     while(1)
     {

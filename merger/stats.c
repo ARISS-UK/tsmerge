@@ -41,10 +41,10 @@ static char *url_encode(char *str) {
 
 static void udpstat(char* fmt, ...)
 {
-    char statmsg[1200];
+    char statmsg[4096];
     va_list arg;
     va_start(arg, fmt);
-    vsnprintf(statmsg,1200,fmt, arg);
+    vsnprintf(statmsg,4096,fmt, arg);
     va_end(arg);
 
     int sock, n;
@@ -120,7 +120,7 @@ stats_merger_t previous_merger_state;
 static void stats_merger(void)
 {
   int i, j;
-  char tmpString[1200];
+  char tmpString[4096];
  
   uint8_t merger_running;
  
