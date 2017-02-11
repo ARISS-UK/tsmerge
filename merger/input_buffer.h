@@ -5,7 +5,7 @@
 #include "merger.h"
 #include "../ts/ts.h"
 
-#define RX_BUFFER_LENGTH    2048
+#define RX_BUFFER_LENGTH    4096
 
 typedef struct
 {
@@ -37,6 +37,7 @@ uint16_t rxBufferHead(void *buffer_void_ptr);
 uint16_t rxBufferTail(void *buffer_void_ptr);
 uint16_t rxBufferLoss(void *buffer_void_ptr);
 void rxBufferPush(void *buffer_void_ptr, uint64_t timestamp, uint8_t *data_p);
+void rxBufferBurstPush(void *buffer_void_ptr, uint64_t timestamp, uint8_t *data_p, uint16_t data_len);
 void rxBufferPop(void *buffer_void_ptr, rxBufferElement_t *rxBufferElementPtr);
 void rxBufferWaitPop(void *buffer_void_ptr, rxBufferElement_t *rxBufferElementPtr);
 

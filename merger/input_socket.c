@@ -26,7 +26,6 @@ void *merger_rx_socket(void *Buffer_void_ptr)
   int optval; /* flag value for setsockopt */
   uint64_t timestamp;
   int n; /* message byte size */
-  int i; /* Looper var */
 
   /* Open UDP Socket */
   sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -88,9 +87,6 @@ void *merger_rx_socket(void *Buffer_void_ptr)
     timestamp = timestamp_ms();
     
     /* Feed in the packet(s) */
-    for(i = 0; i < n; i += MX_PACKET_LEN)
-    {
-      rxBufferPush(rxBufPtr, timestamp, &buf[i]);	    
-    }
+    rxBufferBurstPush(rxBufPtr, timestamp, buf, (uint16_t)n);
   }
 }

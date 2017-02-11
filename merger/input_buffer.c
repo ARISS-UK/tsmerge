@@ -82,26 +82,56 @@ void rxBufferPush(void *buffer_void_ptr, uint64_t timestamp, uint8_t *data_p)
     rxBuffer_t *buf;
     buf = (rxBuffer_t *)buffer_void_ptr;
     
-    rxBufferElement_t newData;
-    /* RX Timestamp */
-    newData.timestamp = timestamp;
-    /* RX Data Buffer */
-    memcpy(&newData.data, data_p, 0x10 + TS_PACKET_SIZE);
-    
     pthread_mutex_lock(&buf->Mutex);
-    if(buf->Head!=(buf->Tail-1) && (buf->Head!=1023 || buf->Tail!=0))
+    if(buf->Head!=(buf->Tail-1) && !(buf->Head==(RX_BUFFER_LENGTH-1) && buf->Tail==0))
     {
-        if(buf->Head==1023)
+        if(buf->Head==(RX_BUFFER_LENGTH-1))
             buf->Head=0;
         else
             buf->Head++;
-        buf->Buffer[buf->Head] = newData;
+
+        buf->Buffer[buf->Head].timestamp = timestamp;
+        memcpy(&buf->Buffer[buf->Head].data, data_p, MX_PACKET_LEN);
         
         pthread_cond_signal(&buf->Signal);
     }
     else
     {
         buf->Loss++;
+    }
+    pthread_mutex_unlock(&buf->Mutex);
+}
+
+/* Lossy when buffer is full */
+void rxBufferBurstPush(void *buffer_void_ptr, uint64_t timestamp, uint8_t *data_p, uint16_t data_len)
+{
+    uint16_t i;
+    rxBuffer_t *buf;
+    buf = (rxBuffer_t *)buffer_void_ptr;
+    
+    pthread_mutex_lock(&buf->Mutex);
+    
+    for(i=0;i<data_len;i+=MX_PACKET_LEN)
+    {
+        if(buf->Head!=(buf->Tail-1) && !(buf->Head==(RX_BUFFER_LENGTH-1) && buf->Tail==0))
+        {
+            if(buf->Head==(RX_BUFFER_LENGTH-1))
+                buf->Head=0;
+            else
+                buf->Head++;
+
+            buf->Buffer[buf->Head].timestamp = timestamp;
+            memcpy(&buf->Buffer[buf->Head].data, &data_p[i], MX_PACKET_LEN);
+        
+            if(i==0)
+            {
+                pthread_cond_signal(&buf->Signal);
+            }
+        }
+        else
+        {
+            buf->Loss++;
+        }
     }
     pthread_mutex_unlock(&buf->Mutex);
 }
@@ -114,7 +144,7 @@ void rxBufferPop(void *buffer_void_ptr, rxBufferElement_t *rxBufferElementPtr)
     pthread_mutex_lock(&buf->Mutex);
     if(buf->Head!=buf->Tail)
     {
-        if(buf->Tail==1023)
+        if(buf->Tail==(RX_BUFFER_LENGTH-1))
             buf->Tail=0;
         else
             buf->Tail++;
@@ -144,7 +174,7 @@ void rxBufferWaitPop(void *buffer_void_ptr, rxBufferElement_t *rxBufferElementPt
         /* and locked again on resumption */
     }
     
-    if(buf->Tail==1023)
+    if(buf->Tail==(RX_BUFFER_LENGTH-1))
         buf->Tail=0;
     else
         buf->Tail++;
