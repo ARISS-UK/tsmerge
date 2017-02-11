@@ -130,6 +130,14 @@ static int _auth_station(mx_t *s, char psk[10])
 	return(-1);
 }
 
+void mx_init(mx_t *s, uint16_t pcr_pid)
+{
+	memset(s, 0, sizeof(mx_t));
+	
+	s->pcr_pid = pcr_pid;
+	s->next_station = -1;
+}
+
 void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 {
 	int i;
