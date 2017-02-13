@@ -262,6 +262,6 @@ void *merger_stats(void* arg)
     }
     
     i++;
-    sleep_ms(200);
+    sleep_ms(500);
   }
 }
