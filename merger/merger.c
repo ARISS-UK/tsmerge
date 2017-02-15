@@ -160,7 +160,7 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 	
 	if(i < 0)
 	{
-		printf("Unrecognised PSK: %.10s\n", (char *) &data[0x06]);
+		//printf("Unrecognised PSK: %.10s\n", (char *) &data[0x06]);
 		return;
 	}
 	
