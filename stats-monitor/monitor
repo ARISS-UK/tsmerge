@@ -2,37 +2,30 @@
 
 const UDP_PORT = 5680;
 
-const HTTP_HOST = '127.0.0.1';
-const HTTP_PORT = 5800;
+const WS_HOST = '127.0.0.1';
+const WS_PORT = 5800;
 
-const path = require('path');
-const express = require('express');
-const app = express();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
+const WebSocket = require('uws');
+const dgram = require('dgram');
 
-app.use('/', express.static(path.join(__dirname, 'html')))
+var WebSocketServer = WebSocket.Server;
+var wss = new WebSocketServer({ port: WS_PORT });
 
-io.on('connection', function(socket){
-  //console.log('a user connected');
-});
-
-http.listen(HTTP_PORT, HTTP_HOST, function(){
-  console.log('HTTP Server listening on '+HTTP_HOST+':'+HTTP_PORT);
-});
-
-var dgram = require('dgram');
 var server = dgram.createSocket('udp4');
 
 server.on('listening', function () {
-    var address = server.address();
-    console.log('UDP Server listening on ' + address.address + ":" + address.port);
+    console.log('UDP Server listening.');
 });
 
 server.on('message', function (message, remote) {
     msg = message.toString()
     //console.log(msg);
-    io.emit("data",msg);
+    
+    wss.clients.forEach(function each(client) {
+      if (client !== wss && client.readyState === WebSocket.OPEN) {
+        client.send(msg);
+      }
+    });
 });
 
 server.bind(UDP_PORT, '127.0.0.1');
