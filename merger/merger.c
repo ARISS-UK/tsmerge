@@ -324,59 +324,75 @@ void _setup_stations(mx_t *s)
 
   /* Zero out struct */
   memset(&s->station[0], 0, sizeof(mx_station_t));
-  /* Set station-specific fields */
-  s->station[0].enabled = STATION_0_ENABLED;
-  strncpy(s->station[0].sid, STATION_0_SID, 10);
-  strncpy(s->station[0].psk, STATION_0_PSK, 10);
+  #if defined(STATION_0_ENABLED) && defined(STATION_0_SID) && defined(STATION_0_PSK) 
+    /* Set station-specific fields */
+    s->station[0].enabled = STATION_0_ENABLED;
+    strncpy(s->station[0].sid, STATION_0_SID, 10);
+    strncpy(s->station[0].psk, STATION_0_PSK, 10);
+  #endif
 
   /* Zero out struct */
   memset(&s->station[1], 0, sizeof(mx_station_t));
-  /* Set station-specific fields */
-  s->station[1].enabled = STATION_1_ENABLED;
-  strncpy(s->station[1].sid, STATION_1_SID, 10);
-  strncpy(s->station[1].psk, STATION_1_PSK, 10);
+  #if defined(STATION_1_ENABLED) && defined(STATION_1_SID) && defined(STATION_1_PSK)
+    /* Set station-specific fields */
+    s->station[1].enabled = STATION_1_ENABLED;
+    strncpy(s->station[1].sid, STATION_1_SID, 10);
+    strncpy(s->station[1].psk, STATION_1_PSK, 10);
+  #endif
 
   /* Zero out struct */
   memset(&s->station[2], 0, sizeof(mx_station_t));
-  /* Set station-specific fields */
-  s->station[2].enabled = STATION_2_ENABLED;
-  strncpy(s->station[2].sid, STATION_2_SID, 10);
-  strncpy(s->station[2].psk, STATION_2_PSK, 10);
+  #if defined(STATION_2_ENABLED) && defined(STATION_2_SID) && defined(STATION_2_PSK)
+    /* Set station-specific fields */
+    s->station[2].enabled = STATION_2_ENABLED;
+    strncpy(s->station[2].sid, STATION_2_SID, 10);
+    strncpy(s->station[2].psk, STATION_2_PSK, 10);
+  #endif
 
   /* Zero out struct */
   memset(&s->station[3], 0, sizeof(mx_station_t));
-  /* Set station-specific fields */
-  s->station[3].enabled = STATION_3_ENABLED;
-  strncpy(s->station[3].sid, STATION_3_SID, 10);
-  strncpy(s->station[3].psk, STATION_3_PSK, 10);
+  #if defined(STATION_3_ENABLED) && defined(STATION_3_SID) && defined(STATION_3_PSK)
+    /* Set station-specific fields */
+    s->station[3].enabled = STATION_3_ENABLED;
+    strncpy(s->station[3].sid, STATION_3_SID, 10);
+    strncpy(s->station[3].psk, STATION_3_PSK, 10);
+  #endif
 
   /* Zero out struct */
   memset(&s->station[4], 0, sizeof(mx_station_t));
-  /* Set station-specific fields */
-  s->station[4].enabled = STATION_4_ENABLED;
-  strncpy(s->station[4].sid, STATION_4_SID, 10);
-  strncpy(s->station[4].psk, STATION_4_PSK, 10);
+  #if defined(STATION_4_ENABLED) && defined(STATION_4_SID) && defined(STATION_4_PSK)
+		/* Set station-specific fields */
+		s->station[4].enabled = STATION_4_ENABLED;
+		strncpy(s->station[4].sid, STATION_4_SID, 10);
+		strncpy(s->station[4].psk, STATION_4_PSK, 10);
+	#endif
 
   /* Zero out struct */
   memset(&s->station[5], 0, sizeof(mx_station_t));
-  /* Set station-specific fields */
-  s->station[5].enabled = STATION_5_ENABLED;
-  strncpy(s->station[5].sid, STATION_5_SID, 10);
-  strncpy(s->station[5].psk, STATION_5_PSK, 10);
+  #if defined(STATION_5_ENABLED) && defined(STATION_5_SID) && defined(STATION_5_PSK)
+		/* Set station-specific fields */
+		s->station[5].enabled = STATION_5_ENABLED;
+		strncpy(s->station[5].sid, STATION_5_SID, 10);
+		strncpy(s->station[5].psk, STATION_5_PSK, 10);
+	#endif
 
   /* Zero out struct */
   memset(&s->station[6], 0, sizeof(mx_station_t));
-  /* Set station-specific fields */
-  s->station[6].enabled = STATION_6_ENABLED;
-  strncpy(s->station[6].sid, STATION_6_SID, 10);
-  strncpy(s->station[6].psk, STATION_6_PSK, 10);
+  #if defined(STATION_6_ENABLED) && defined(STATION_6_SID) && defined(STATION_6_PSK)
+		/* Set station-specific fields */
+		s->station[6].enabled = STATION_6_ENABLED;
+		strncpy(s->station[6].sid, STATION_6_SID, 10);
+		strncpy(s->station[6].psk, STATION_6_PSK, 10);
+  #endif
 
   /* Zero out struct */
   memset(&s->station[7], 0, sizeof(mx_station_t));
-  /* Set station-specific fields */
-  s->station[7].enabled = STATION_7_ENABLED;
-  strncpy(s->station[7].sid, STATION_7_SID, 10);
-  strncpy(s->station[7].psk, STATION_7_PSK, 10);
+  #if defined(STATION_7_ENABLED) && defined(STATION_7_SID) && defined(STATION_7_PSK)
+		/* Set station-specific fields */
+		s->station[7].enabled = STATION_7_ENABLED;
+		strncpy(s->station[7].sid, STATION_7_SID, 10);
+		strncpy(s->station[7].psk, STATION_7_PSK, 10);
+  #endif
 
   pthread_mutex_unlock(&merger.lock);
 }
