@@ -70,7 +70,7 @@ static void udpstat(char* fmt, ...)
 
 static void stats_rxCircularBuffer(void)
 {
-  int head, tail, queue, loss;
+  uint32_t head, tail, queue, loss;
   /* rxBuffer functions are internally locked */
 
   head = rxBufferHead(&rxBuffer);

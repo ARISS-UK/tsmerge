@@ -32,10 +32,10 @@ typedef struct
 
 /** Common functions **/
 void rxBufferInit(void *buffer_void_ptr);
-uint8_t rxBufferNotEmpty(void *buffer_void_ptr);
-uint16_t rxBufferHead(void *buffer_void_ptr);
-uint16_t rxBufferTail(void *buffer_void_ptr);
-uint16_t rxBufferLoss(void *buffer_void_ptr);
+uint32_t rxBufferNotEmpty(void *buffer_void_ptr);
+uint32_t rxBufferHead(void *buffer_void_ptr);
+uint32_t rxBufferTail(void *buffer_void_ptr);
+uint32_t rxBufferLoss(void *buffer_void_ptr);
 void rxBufferPush(void *buffer_void_ptr, uint64_t timestamp, uint8_t *data_p);
 void rxBufferBurstPush(void *buffer_void_ptr, uint64_t timestamp, uint8_t *data_p, uint16_t data_len);
 void rxBufferPop(void *buffer_void_ptr, rxBufferElement_t *rxBufferElementPtr);

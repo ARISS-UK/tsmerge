@@ -20,12 +20,12 @@ void rxBufferInit(void *buffer_void_ptr)
     pthread_mutex_unlock(&buf->Mutex);
 }
 
-uint8_t rxBufferNotEmpty(void *buffer_void_ptr)
+uint32_t rxBufferNotEmpty(void *buffer_void_ptr)
 {
     rxBuffer_t *buf;
     buf = (rxBuffer_t *)buffer_void_ptr;
 
-    uint8_t result;
+    uint32_t result;
     
     pthread_mutex_lock(&buf->Mutex);
     result = (buf->Head!=buf->Tail);
@@ -34,12 +34,12 @@ uint8_t rxBufferNotEmpty(void *buffer_void_ptr)
     return result;
 }
 
-uint16_t rxBufferHead(void *buffer_void_ptr)
+uint32_t rxBufferHead(void *buffer_void_ptr)
 {
     rxBuffer_t *buf;
     buf = (rxBuffer_t *)buffer_void_ptr;
     
-    uint16_t result;
+    uint32_t result;
     
     pthread_mutex_lock(&buf->Mutex);
     result = buf->Head;
@@ -48,12 +48,12 @@ uint16_t rxBufferHead(void *buffer_void_ptr)
     return result;
 }
 
-uint16_t rxBufferTail(void *buffer_void_ptr)
+uint32_t rxBufferTail(void *buffer_void_ptr)
 {
     rxBuffer_t *buf;
     buf = (rxBuffer_t *)buffer_void_ptr;
     
-    uint16_t result;
+    uint32_t result;
     
     pthread_mutex_lock(&buf->Mutex);
     result = buf->Tail;
@@ -62,12 +62,12 @@ uint16_t rxBufferTail(void *buffer_void_ptr)
     return result;
 }
 
-uint16_t rxBufferLoss(void *buffer_void_ptr)
+uint32_t rxBufferLoss(void *buffer_void_ptr)
 {
     rxBuffer_t *buf;
     buf = (rxBuffer_t *)buffer_void_ptr;
     
-    uint16_t result;
+    uint32_t result;
     
     pthread_mutex_lock(&buf->Mutex);
     result = buf->Loss;
