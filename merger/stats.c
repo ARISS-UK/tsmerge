@@ -153,11 +153,19 @@ static void stats_merger(void)
   char *encoded_sid;
   for(i = 0; i < _STATIONS; i++)
   {
+    if(merger.station[i].enabled == 0)
+    {
+      continue;
+    }
     selected_allstations += merger.station[i].selected;
   }
   
   for(i = j = 0; i < _STATIONS; i++)
   {
+    if(merger.station[i].enabled == 0)
+    {
+      continue;
+    }
     if(j!=0)
     {
       /* Comma seperation */
