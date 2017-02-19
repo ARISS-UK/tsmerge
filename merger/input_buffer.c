@@ -98,6 +98,10 @@ void rxBufferPush(void *buffer_void_ptr, uint64_t timestamp, uint8_t *data_p)
     else
     {
         buf->Loss++;
+        printf("Input buffer loss! (Head: %d, Tail: %d)\n",
+	    buf->Head,
+	    buf->Tail
+        );
     }
     pthread_mutex_unlock(&buf->Mutex);
 }
@@ -130,7 +134,12 @@ void rxBufferBurstPush(void *buffer_void_ptr, uint64_t timestamp, uint8_t *data_
         }
         else
         {
+            printf("Input buffer loss! (Head: %d, Tail: %d)\n",
+                buf->Head,
+                buf->Tail
+            );
             buf->Loss++;
+            break;
         }
     }
     pthread_mutex_unlock(&buf->Mutex);

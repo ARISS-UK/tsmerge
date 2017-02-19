@@ -5,7 +5,7 @@
 #include "merger.h"
 #include "../ts/ts.h"
 
-#define RX_BUFFER_LENGTH    4096
+#define RX_BUFFER_LENGTH    32768
 
 typedef struct
 {
@@ -23,9 +23,9 @@ typedef struct
     /* New Data Signal */
     pthread_cond_t Signal;
     /* Head and Tail Indexes */
-    uint16_t Head, Tail;
+    uint32_t Head, Tail;
     /* Data Loss Counter */
-    uint16_t Loss;
+    uint32_t Loss;
     /* Data */
     rxBufferElement_t Buffer[RX_BUFFER_LENGTH];
 } rxBuffer_t;
