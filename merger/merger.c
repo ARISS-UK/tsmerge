@@ -63,7 +63,7 @@ static mx_packet_t *_next_pcr(mx_t *s, int station, uint32_t counter)
 	return(NULL);
 }
 
-static mx_packet_t *_next_segment(mx_t *s, int station)
+static mx_packet_t *_next_segment(mx_t *s, int station, mx_packet_t **r)
 {
 	mx_station_t *st;
 	mx_packet_t *left, *right;
@@ -90,6 +90,9 @@ static mx_packet_t *_next_segment(mx_t *s, int station)
 	
 	/* Advance the current stream position */
 	st->current = right->counter + 1;
+	
+	/* Set a pointer to the right hand packet */
+	if(r != NULL) *r = right;
 	
 	/* Return a pointer to the left hand packet */
 	return(left);
@@ -231,7 +234,7 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 int mx_update(mx_t *s, int64_t timestamp)
 {
 	int i;
-	mx_packet_t *o, *l, *p;
+	mx_packet_t *o, *l, *r, *p;
 	uint64_t pcr, best_pcr;
 	uint32_t counter;
 	int best_station;
@@ -254,8 +257,13 @@ int mx_update(mx_t *s, int64_t timestamp)
 		if(s->station[i].sid[0] == '\0') continue;
 		if(s->station[i].timestamp <= s->timestamp - _TIMEOUT_MS) continue;
 		
-		while((p = _next_segment(s, i)) != NULL)
+		while((p = _next_segment(s, i, &r)) != NULL)
 		{
+			/* Skip past segments with weird or invalid PCR timings */
+			/* TODO: This won't handle clock roll-over well */
+			if(p->header.pcr_base >= r->header.pcr_base) continue;
+			if(r->header.pcr_base - p->header.pcr_base > _SEGMENT_PCR_LIMIT) continue;
+			
 			/* Stop when we are at or ahead of the last sent segment */
 			if(p->header.pcr_base >= pcr) break;
 		}
