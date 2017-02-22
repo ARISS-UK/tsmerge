@@ -238,6 +238,8 @@ int mx_update(mx_t *s, int64_t timestamp)
 	uint64_t pcr, best_pcr;
 	uint32_t counter;
 	int best_station;
+        uint64_t timer;
+        timer = timestamp_ms();
 	
 	/* Update the global timestamp */
 	s->timestamp = timestamp;
@@ -259,6 +261,7 @@ int mx_update(mx_t *s, int64_t timestamp)
 		
 		while((p = _next_segment(s, i, &r)) != NULL)
 		{
+			printf("next_segment: station: %d, p->header.pcr_base: %ld, r->header.pcr_base: %ld\n",i, p->header.pcr_base, r->header.pcr_base);
 			/* Skip past segments with weird or invalid PCR timings */
 			/* TODO: This won't handle clock roll-over well */
 			if(p->header.pcr_base >= r->header.pcr_base) continue;
@@ -269,7 +272,11 @@ int mx_update(mx_t *s, int64_t timestamp)
 		}
 		
 		/* Didn't find a newer segment? */
-		if(p == NULL) continue;
+		if(p == NULL)
+                {
+                    printf("Station %d returned null for next_segment\n", i);
+                    continue;
+                }
 		
 		/* Track which station is offering the "best" segment to use next */
 		if(best_station == -1 || p->header.pcr_base < best_pcr)
@@ -323,6 +330,8 @@ int mx_update(mx_t *s, int64_t timestamp)
 	//printf("s->next_station = %d\n", s->next_station);
 	//printf("s->next_counter = %d\n", s->next_counter);
 	
+	printf("MX update finished, best station: %d, took %ld ms\n", best_station, (timestamp_ms() - timer));
+
 	return(1);
 }
 
