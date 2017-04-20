@@ -240,7 +240,16 @@ int mx_update(mx_t *s, int64_t timestamp)
 	int best_station;
         uint64_t timer;
         timer = timestamp_ms();
-	
+	FILE *debug_fp;
+	time_t debug_now;
+	char debug_buf[sizeof "2011-10-08T07:07:09Z"];
+
+	debug_fp = fopen("/srv/tsmerge/logs/next_segment_log.txt","a+");
+
+	time(&debug_now);
+	strftime(debug_buf, sizeof debug_buf, "%FT%TZ", gmtime(&debug_now));
+	fprintf(debug_fp, "%s: Begun MX Update\n", debug_buf);
+
 	/* Update the global timestamp */
 	s->timestamp = timestamp;
 	
@@ -261,7 +270,7 @@ int mx_update(mx_t *s, int64_t timestamp)
 		
 		while((p = _next_segment(s, i, &r)) != NULL)
 		{
-			printf("next_segment: station: %d, p->header.pcr_base: %ld, r->header.pcr_base: %ld\n",i, p->header.pcr_base, r->header.pcr_base);
+			fprintf(debug_fp, "next_segment: station: %d, p->header.pcr_base: %ld, r->header.pcr_base: %ld\n",i, p->header.pcr_base, r->header.pcr_base);
 			/* Skip past segments with weird or invalid PCR timings */
 			/* TODO: This won't handle clock roll-over well */
 			if(p->header.pcr_base >= r->header.pcr_base) continue;
@@ -274,7 +283,7 @@ int mx_update(mx_t *s, int64_t timestamp)
 		/* Didn't find a newer segment? */
 		if(p == NULL)
                 {
-                    printf("Station %d returned null for next_segment\n", i);
+                    fprintf(debug_fp, "next_segment: station %d returned NULL\n", i);
                     continue;
                 }
 		
@@ -291,7 +300,12 @@ int mx_update(mx_t *s, int64_t timestamp)
 		}
 	}
 	
-	if(best_station == -1) return(0);
+	if(best_station == -1)
+	{
+		fprintf(debug_fp, "MX update finished, no valid station, took %ld ms\n", (timestamp_ms() - timer));
+		fclose(debug_fp);
+		return(0);
+	}
 	
 	/* Link the packets inside the segment */
 	l = NULL;
@@ -330,7 +344,8 @@ int mx_update(mx_t *s, int64_t timestamp)
 	//printf("s->next_station = %d\n", s->next_station);
 	//printf("s->next_counter = %d\n", s->next_counter);
 	
-	printf("MX update finished, best station: %d, took %ld ms\n", best_station, (timestamp_ms() - timer));
+	fprintf(debug_fp, "MX update finished, best station: %d, took %ld ms\n", best_station, (timestamp_ms() - timer));
+	fclose(debug_fp);
 
 	return(1);
 }
