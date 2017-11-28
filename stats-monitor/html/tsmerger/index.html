@@ -141,12 +141,12 @@ body {
 </div>
 </div>
 </body>
-<script src="libs/jquery-3.1.1.min.js"></script>
-<script src="libs/bootstrap-3.3.7/js/bootstrap.min.js"></script>
+<script src="/lib/jquery-3.2.1.min.js"></script>
+<script src="/lib/bootstrap-3.3.7/js/bootstrap.min.js"></script>
+<script src="/lib/clappr-0.2.75/clappr.min.js"></script>
+<script src="/lib/clappr-rtmp-0.0.20/rtmp.min.js"></script>
+<script src="/hamtv/venue/venue-batc.js"></script>
 <script src="libs/smoothie.js"></script>
-<script src="libs/clappr/clappr.min.js"></script>
-<script src="libs/clappr/rtmp/rtmp.min.js"></script>
-<script src="libs/batc.js"></script>
 <script>
 var rtmpUrl = "rtmp://beta.batc.tv:1935/event/goonhilly";
 
@@ -161,7 +161,7 @@ var station_contrib_graphOptions = [
 var last_server_data = 0;
 var mx_merger = null;
 var thread_stats = [];
-var rx_stations = [null, null, null, null, null, null, null, null];
+var rx_stations = [null, null, null, null, null, null, null, null, null, null, null, null];
 var rx_stations_timegraph = new SmoothieChart({
   millisPerPixel: 50,
   grid: {
