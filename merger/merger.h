@@ -18,7 +18,7 @@
 #define MERGER_TCP_TX_PORT      5679
 
 /* Maximum number of stations and packets */
-#define _STATIONS 12
+#define _STATIONS 15
 #define _PACKETS  (UINT16_MAX+1)
 
 /* Station timeout in milliseconds */

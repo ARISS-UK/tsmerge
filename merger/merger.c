@@ -438,6 +438,33 @@ void _setup_stations(mx_t *s)
 		strncpy(s->station[11].psk, STATION_11_PSK, 10);
   #endif
 
+  /* Zero out struct */
+  memset(&s->station[12], 0, sizeof(mx_station_t));
+  #if defined(STATION_12_ENABLED) && defined(STATION_12_SID) && defined(STATION_12_PSK)
+		/* Set station-specific fields */
+		s->station[12].enabled = STATION_12_ENABLED;
+		strncpy(s->station[12].sid, STATION_12_SID, 10);
+		strncpy(s->station[12].psk, STATION_12_PSK, 10);
+  #endif
+
+  /* Zero out struct */
+  memset(&s->station[13], 0, sizeof(mx_station_t));
+  #if defined(STATION_13_ENABLED) && defined(STATION_13_SID) && defined(STATION_13_PSK)
+		/* Set station-specific fields */
+		s->station[13].enabled = STATION_13_ENABLED;
+		strncpy(s->station[13].sid, STATION_13_SID, 10);
+		strncpy(s->station[13].psk, STATION_13_PSK, 10);
+  #endif
+
+  /* Zero out struct */
+  memset(&s->station[14], 0, sizeof(mx_station_t));
+  #if defined(STATION_14_ENABLED) && defined(STATION_14_SID) && defined(STATION_14_PSK)
+		/* Set station-specific fields */
+		s->station[14].enabled = STATION_14_ENABLED;
+		strncpy(s->station[14].sid, STATION_14_SID, 10);
+		strncpy(s->station[14].psk, STATION_14_PSK, 10);
+  #endif
+
   pthread_mutex_unlock(&merger.lock);
 }
 
