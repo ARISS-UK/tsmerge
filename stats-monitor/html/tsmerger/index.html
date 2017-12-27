@@ -15,20 +15,16 @@ body {
   margin-bottom: 30px;
 }
 .rx_station-stat-label {
+  margin-left: 8px;
   font-size: 1.1em;
 }
 .rx_station-stat {
-  display: block;
   /*float: right;
   text-align: right;*/
   
   width: 65px;
   font-size: 1.1em;
   font-weight: bold;
-}
-.rx_graph-legend {
-  display:inline-block;
-  font-size: 1.3em;
 }
 .font-red {
   color: rgba(255, 0, 0, 1);
@@ -50,95 +46,62 @@ body {
   float: right;
   text-align: right;
 }
-#column-contrib-graph {
-  display: inline-block;
-}
-.poster-icon.play {
-  display: none !important;
-}
-.spinner-three-bounce {
-  display: none !important;
-}
-#stream-player-overlay {
-  color: white;
-  /*background-color: rgba(0, 0, 0, 0.5);*/
-
-  background: rgba(0,0,0,0.5);
-  background: -webkit-linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5),rgba(0,0,0,0));
-  background: -o-linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5),rgba(0,0,0,0));
-  background: -moz-linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5),rgba(0,0,0,0));
-  background: linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5),rgba(0,0,0,0));
-
-  text-align: center;
-  padding-top: 35px;
-  padding-bottom: 25px;
-  height: auto;
-  width: inherit;
-  font-size: 3em;
-  font-weight: bold;
-  position: absolute;
-  z-index: 100;
-  opacity: 1 !important;
-}
 .panel-body > .station-tag {
   opacity: 0.1;
   display: block;
   margin-bottom: 7px;
+}
+.station-title {
+  font-weight: bold;
+}
+.station-label {
+  margin-left: 5px;
+}
+.station-div {
+  margin-top: 5px;
+}
+.thread-critical {
+  background-color: rgba(255,0,0,0.6);
+}
+.thread-warning {
+  background-color: rgba(255,153,0,0.6);
 }
 </style>
 <link rel="stylesheet" href="libs/bootstrap-3.3.7/css/bootstrap.min.css">
 </head>
 <body>
 <div id="page-container" class="container">
-<div class="page-header">
-  <a href="https://github.com/fsphil/tsmerge" target="_blank" class="pull-right">Project by Phil Heron</a>
-  <h1>HAMTV TS Merger</h1>
-</div>
 <div id="player-row" class="row">
-  <div id="column-contrib-graph">
-    <h1 id="merger-status-wrap"><span id="merger_status_indicator" class="label label-default">Merger Standing By</span></h1>
-    <h4>Output Contribution</h4>
-    <canvas id="output_stations_graph" width="350" height="100"></canvas>
-    <div class="rx_graph-legend">
-      <span class="glyphicon glyphicon-minus font-red"></span><span id="graph-legend-0"></span><br>
-      <span class="glyphicon glyphicon-minus font-green"></span><span id="graph-legend-1"></span><br>
-      <span class="glyphicon glyphicon-minus font-blue"></span><span id="graph-legend-2"></span><br>
-      <span class="glyphicon glyphicon-minus font-yellow"></span><span id="graph-legend-3"></span><br>
-    </div>
-    <br><br>
+  <div id="column-contrib-graph" class="col-md-4">
+    <h2>ARISS HAMTV Merger</h2>
+    <h1 id="merger-status-wrap"><span id="merger_status_indicator" class="label label-default">Standing By</span></h1>
     <p>
-      This is the status display for the HAMTV TS Merger Project.
+      HAMTV Merger Project by Phil MI0VIM & Phil M0DNY.
     </p>
     <p>
-      For low-latency output viewing use the MPEG-TS Feed: <a href="tcp://hamtv.batc.tv:5679">tcp://hamtv.batc.tv:5679</a>
+      <a href="http://webchat.freenode.net/?channels=#ariss" target="_blank">#ariss IRC Chat Channel</a>
     </p>
     <p>
-      For more information, visit #ariss on freenode IRC (<a href="http://webchat.freenode.net/?channels=#ariss" target="_blank">webchat link</a>)
+      <a href="https://github.com/philcrump/tsmerge" target="_blank">Github Code Repository</a>
     </p>
-  </div>
-  <div id="stream-player" class="pull-right">
-    <div id="stream-player-overlay">Output Standing By</div>
-  </div>
-</div>
-<h2>Receiver Stations</h2>
-<div id="rx_stations_row" class="row"></div>
-
-<div class="row">
-  <div class="col-md-3">
-    <h2>Server Status</h2>
+    <a href="/tsmerge/logs/" target="_blank">Merger Logs</a>
+    <h3>Status</h3>
     tsmerge: <span id="tsmerge_server" class="align-right bold"></span><br />
     version: <span class="align-right"><span id="tsmerge_version"></span> (<span id="tsmerge_built"></span>)</span><br />
-    RX Buffer Queue: <span id="rx_buffer_queue" class="align-right bold"></span><br />
-    RX Buffer Loss : <span id="rx_buffer_loss" class="align-right bold"></span><br />
-    <a href="/tsmerge/logs/" target="_blank">Merger Logs</a>
-  </div>
-  <div class="col-md-3">
+    RX Packet Queue: <span id="rx_buffer_queue" class="align-right bold"></span><br />
+    RX Packet Loss: <span id="rx_buffer_loss" class="align-right bold"></span>
     <h4>Threads</h4>
     <div id="server_threads">
       <ul id="server_threads_list"></ul>
     </div>
   </div>
+  <div class="col-md-1"></div>
+  <div class="col-md-7">
+    <h3>Ground Stations</h3>
+    <div id="rx_stations_row" class="row"></div>
+  </div>
 </div>
+
 </div>
 </body>
 <script src="/lib/jquery-3.2.1.min.js"></script>
@@ -146,33 +109,14 @@ body {
 <script src="/lib/clappr-0.2.75/clappr.min.js"></script>
 <script src="/lib/clappr-rtmp-0.0.20/rtmp.min.js"></script>
 <script src="/hamtv/venue/venue-batc.js"></script>
-<script src="libs/smoothie.js"></script>
 <script>
 var rtmpUrl = "rtmp://beta.batc.tv:1935/event/goonhilly";
-
-var station_contrib_graphOptions = [
-  { strokeStyle: 'rgba(255, 0, 0, 1)', fillStyle: 'rgba(255, 0, 0, 0.3)', lineWidth: 3 },
-  { strokeStyle: 'rgba(0, 255, 0, 1)', fillStyle: 'rgba(0, 255, 0, 0.3)', lineWidth: 3 },
-  { strokeStyle: 'rgba(0, 0, 255, 1)', fillStyle: 'rgba(0, 0, 255, 0.3)', lineWidth: 3 },
-  { strokeStyle: 'rgba(255, 255, 0, 1)', fillStyle: 'rgba(255, 255, 0, 0.3)', lineWidth: 3 },
-  { strokeStyle: 'rgba(255, 0, 255, 1)', fillStyle: 'rgba(255, 0, 255, 0.3)', lineWidth: 3 },
-];
 
 var last_server_data = 0;
 var mx_merger = null;
 var thread_stats = [];
-var rx_stations = [null, null, null, null, null, null, null, null, null, null, null, null];
-var rx_stations_timegraph = new SmoothieChart({
-  millisPerPixel: 50,
-  grid: {
-    strokeStyle: '#555555',
-    lineWidth: 1,
-    millisPerLine: 2000,
-    verticalSections: 4
-    }
-  }
-);
-mx_merger = {
+var rx_stations = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null];
+var mx_merger = {
   "data_received": 0,
   "gui_updated": 0,
   "output_live": 0
@@ -180,8 +124,8 @@ mx_merger = {
 rx_stations.forEach(function(station, station_index)
 {
   rx_stations[station_index] = {
-    /* Cached Panel Selector */
-    "panel": null,
+    /* Cached Div Selector */
+    "div": null,
     
     /* Callsign of station */
     "callsign": "[Station Slot Free]",
@@ -193,21 +137,11 @@ rx_stations.forEach(function(station, station_index)
     "selected_percent": 0,
     "selected_sum": 0,
     
-    "lost_sum": 0,
-    
-    /* Contribution graph data */
-    "graph_data": new TimeSeries(),
-    "graph_options": station_contrib_graphOptions[station_index],
+    "lost_sum": 0
   };
   
   /* Set up contribution graph data */
-  rx_stations[station_index].graph_data.append(new Date().getTime(), 0);
-  rx_stations_timegraph.addTimeSeries(
-    rx_stations[station_index].graph_data,
-    rx_stations[station_index].graph_options
-  );
 });
-rx_stations_timegraph.streamTo(document.getElementById('output_stations_graph'), 100);
 
 var status_output = false;
 var status_counter = 0;
@@ -251,80 +185,65 @@ checkStatus();
 
 function create_stations()
 {
-  var colwidth = Math.floor(12/rx_stations.length);
   rx_stations.forEach(function(station, station_id)
   {
-    var col = $('<div></div>')
-      .attr('id', 'column-rx_station-'+station_id)
-      .attr('class', 'col-md-'+colwidth);
-        
-    station.panel = $('<div></div>')
+    station.div = $('<div></div>')
       .attr('id', 'panel-rx_station-'+station_id)
-      .attr('class', 'panel panel-default');
+      .attr('class', 'station-div');
     
-    var panel_heading = $('<div></div>')
-      .attr('class', 'panel-heading');
     
-    panel_heading.append($('<h3></h3>')
+    station.div.append($('<span></span>')
                             .attr('id','title-rx_station-'+station_id)
-                            .attr('class', 'panel-title')
+                            .attr('class', 'station-title')
                          );
     
-    station.panel.append(panel_heading);
-    
-    var panel_body = $('<div></div>')
-                        .attr('class', 'panel-body');
-    
-    panel_body.append($('<span></span>')
+    station.div.append($('<span></span>')
                         .attr('id','rx_station-selecting-label-'+station_id)
-                        .attr('class','label label-success station-tag')
+                        .attr('class','station-label label label-success')
                         .text('Prime Receiver'));
 
-    panel_body.append($('<span></span>')
+    station.div.append($('<span></span>')
                         .attr('id','rx_station-streaming-label-'+station_id)
-                        .attr('class','label label-info station-tag')
+                        .attr('class','station-label label label-info')
                         .text('Receiving Data'));
 
-    panel_body.append($('<span></span>')
+    station.div.append($('<span></span>')
                         .attr('id','rx_station-netloss-label-'+station_id)
-                        .attr('class','label label-warning station-tag')
+                        .attr('class','station-label label label-warning')
                         .text('Upload Network Loss'));
 
-    /* Graphic here? */
+    station.div.append($('</br>'));
                         
-    panel_body.append($('<hr />'));
-    
-    panel_body.append($('<span></span>')
+    station.div.append($('<span></span>')
                         .attr('class', 'rx_station-stat-label')
                         .text('Last Active: '));
-    panel_body.append($('<span></span>')
+
+    station.div.append($('<span></span>')
                         .attr('id','rx_station-last_updated-'+station_id)
                         .attr('class', 'rx_station-stat'));
     
-    panel_body.append($('<span></span>')
+    station.div.append($('<span></span>')
                         .attr('class', 'rx_station-stat-label')
                         .text('TS Packets: '));
-    panel_body.append($('<span></span>')
+    station.div.append($('<span></span>')
                         .attr('id','rx_station-total-'+station_id)
                         .attr('class', 'rx_station-stat'));
     
-    panel_body.append($('<span></span>')
+    station.div.append($('<span></span>')
                         .attr('class', 'rx_station-stat-label')
                         .text('Upload Loss: '));
-    panel_body.append($('<span></span>')
+    station.div.append($('<span></span>')
                         .attr('id','rx_station-netloss-'+station_id)
                         .attr('class', 'rx_station-stat'));
     
-    panel_body.append($('<span></span>')
+    station.div.append($('<span></span>')
                         .attr('class', 'rx_station-stat-label')
                         .text('PCRs Used: '));
-    panel_body.append($('<span></span>')
+    station.div.append($('<span></span>')
                         .attr('id','rx_station-selected-'+station_id)
                         .attr('class', 'rx_station-stat'));
     
-    station.panel.append(panel_body);
-    col.append(station.panel);
-    $("#rx_stations_row").append(col);
+    $("#rx_stations_row").append(station.div);
   });
 }
 
@@ -340,7 +259,7 @@ function render_stations()
       merger_status_indicator
         .removeClass('label-success')
         .addClass('label-default')
-        .text('Merger Standing by');
+        .text('Standing by');
     }
   }
   else if(mx_merger.output_live == 1)
@@ -350,7 +269,7 @@ function render_stations()
       merger_status_indicator
         .removeClass('label-default')
         .addClass('label-success')
-        .text('Merger Output is Live!');
+        .text('Active!');
     }
   }
 
@@ -363,9 +282,9 @@ function render_stations()
       {
         /* Station is streaming and selected for output */
         /* Green panel - set if not already set */
-        if(!station.panel.hasClass('panel-success'))
+        if(!station.div.hasClass('panel-success'))
         {
-          station.panel
+          station.div
             .removeClass('panel-default')
             .removeClass('panel-info')
             .addClass('panel-success');
@@ -375,9 +294,9 @@ function render_stations()
       {
         /* Station is streaming, but not selected */
         /* Blue panel - set if not already set */
-        if(!station.panel.hasClass('panel-info'))
+        if(!station.div.hasClass('panel-info'))
         {
-          station.panel
+          station.div
             .removeClass('panel-default')
             .removeClass('panel-success')
             .addClass('panel-info');
@@ -388,9 +307,9 @@ function render_stations()
     {
       /* Station is not streaming */
       /* Grey panel - set if not already set */
-      if(!station.panel.hasClass('panel-default'))
+      if(!station.div.hasClass('panel-default'))
       {
-        station.panel
+        station.div
           .removeClass('panel-info')
           .removeClass('panel-success')
           .addClass('panel-default');
@@ -449,15 +368,6 @@ function render_stations()
       .text(station.selected_sum);
     $('#rx_station-netloss-'+station_id)
       .text(station.lost_sum);
-
-    if(station.selected > 0)
-    {
-      rx_stations[station_id].graph_data.append(graphTime, station.selected_percent);
-    }
-    else
-    {
-      rx_stations[station_id].graph_data.append(graphTime, 0);
-    }
   });
   
   setTimeout(render_stations,200);
@@ -486,7 +396,7 @@ function update_stations(stations)
   });
 }
 
-var ws_url = "wss://hamtv.batc.tv/tsmerger-ws/";
+var ws_url = "wss://ariss.batc.tv/tsmerger-ws/";
 var ws_sock = null;
 var ws_reconnect = null;
 
@@ -526,8 +436,11 @@ function ws_connect()
 
       ws_sock.onclose = function()
       {
-        ws_sock.close();
-        ws_sock = null;
+        if(ws_sock != null)
+        {
+          ws_sock.close();
+          ws_sock = null;
+        }
 
         if(!ws_reconnect)
         {
@@ -599,6 +512,14 @@ function updateData(jdata)
           thread_stats[data.threads[i].id] = $("#thread-stat-"+data.threads[i].id);
         }
         thread_stats[data.threads[i].id].text(data.threads[i].cpu_percent+"%");
+        if(data.threads[i].cpu_percent >= 50)
+        {
+          thread_stats[data.threads[i].id].addClass('thread-critical');
+        }
+        else if(data.threads[i].cpu_percent >= 10)
+        {
+          thread_stats[data.threads[i].id].addClass('thread-warning');
+        }
       }
       break;
       
