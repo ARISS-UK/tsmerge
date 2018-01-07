@@ -150,7 +150,7 @@ static void stats_merger(void)
 
   /* Sum selected count for merger contribution count */
   uint32_t selected_allstations = 0;
-  char *encoded_sid;
+  char *encoded_sid, *encoded_location;
   for(i = 0; i < _STATIONS; i++)
   {
     if(merger.station[i].enabled == 0)
@@ -174,12 +174,16 @@ static void stats_merger(void)
     j++;
 
     encoded_sid = url_encode(merger.station[i].sid);
+    encoded_location = url_encode(merger.station[i].location);
     
-    sprintf(tmpString,"%s{\"id\":%d,\"enabled\":%d,\"callsign\":\"%s\",\"last_updated\":%ld,\"received\":%d,\"received_sum\":%d,\"selected\":%d,\"selected_percent\":%d,\"selected_sum\":%d,\"lost_sum\":%d}",
+    sprintf(tmpString,"%s{\"id\":%d,\"enabled\":%d,\"callsign\":\"%s\",\"latitude\":%.6f,\"longitude\":%.6f,\"location\":\"%s\",\"last_updated\":%ld,\"received\":%d,\"received_sum\":%d,\"selected\":%d,\"selected_percent\":%d,\"selected_sum\":%d,\"lost_sum\":%d}",
       tmpString,
       i,
       merger.station[i].enabled,
-      encoded_sid,
+      merger.station[i].sid,
+      merger.station[i].latitude,
+      merger.station[i].longitude,
+      merger.station[i].location,
       merger.station[i].timestamp,
       merger.station[i].received,
       merger.station[i].received_sum,
@@ -189,6 +193,7 @@ static void stats_merger(void)
       merger.station[i].latest - (merger.station[i].counter_initial + merger.station[i].received_sum)
     );
     free(encoded_sid);
+    free(encoded_location);
 
     merger.station[i].received = 0;
     merger.station[i].selected = 0;
