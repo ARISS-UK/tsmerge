@@ -25,6 +25,7 @@
 #include "merger/output_socket.h"
 #include "merger/output_feed.h"
 #include "merger/output_log.h"
+#include "merger/stations.h"
 
 rxBuffer_t rxBuffer;
 

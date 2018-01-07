@@ -1,5 +1,6 @@
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "../ts/ts.h"
 
 #ifndef _MERGER_H
@@ -71,13 +72,18 @@ typedef struct {
 
 typedef struct {
 	/* Enabled */
-        uint8_t enabled;
+        bool enabled;
 	
 	/* The station ID */
 	char sid[10];
 	
 	/* The station PSK */
 	char psk[10];
+
+	/* The station location */
+        float latitude;
+        float longitude;
+        char location[64];
 	
 	/* The current position in the stream */
 	uint32_t current;
@@ -128,7 +134,7 @@ typedef struct {
 	
 	/* Big Fat Lock TODO: Don't do this */
 	pthread_mutex_t lock;
-	
+
 } mx_t;
 
 /* the TS merger state */

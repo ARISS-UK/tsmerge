@@ -123,7 +123,7 @@ static int _auth_station(mx_t *s, char psk[10])
 	/* Search for the station ID, return index if found or -1 */
 	for(i = 0; i < _STATIONS; i++)
 	{
-		if((s->station[i].enabled == 1) && (strncmp(s->station[i].psk, psk, strlen(s->station[i].psk)) == 0))
+		if(s->station[i].enabled && (strncmp(s->station[i].psk, psk, strlen(s->station[i].psk)) == 0))
 		{
 			/* Found a matching station */
 			return(i);
@@ -326,152 +326,10 @@ int mx_update(mx_t *s, int64_t timestamp)
 	return(1);
 }
 
-void _setup_stations(mx_t *s)
-{
-  pthread_mutex_lock(&merger.lock);
-
-  /* Zero out struct */
-  memset(&s->station[0], 0, sizeof(mx_station_t));
-  #if defined(STATION_0_ENABLED) && defined(STATION_0_SID) && defined(STATION_0_PSK) 
-    /* Set station-specific fields */
-    s->station[0].enabled = STATION_0_ENABLED;
-    strncpy(s->station[0].sid, STATION_0_SID, 10);
-    strncpy(s->station[0].psk, STATION_0_PSK, 10);
-  #endif
-
-  /* Zero out struct */
-  memset(&s->station[1], 0, sizeof(mx_station_t));
-  #if defined(STATION_1_ENABLED) && defined(STATION_1_SID) && defined(STATION_1_PSK)
-    /* Set station-specific fields */
-    s->station[1].enabled = STATION_1_ENABLED;
-    strncpy(s->station[1].sid, STATION_1_SID, 10);
-    strncpy(s->station[1].psk, STATION_1_PSK, 10);
-  #endif
-
-  /* Zero out struct */
-  memset(&s->station[2], 0, sizeof(mx_station_t));
-  #if defined(STATION_2_ENABLED) && defined(STATION_2_SID) && defined(STATION_2_PSK)
-    /* Set station-specific fields */
-    s->station[2].enabled = STATION_2_ENABLED;
-    strncpy(s->station[2].sid, STATION_2_SID, 10);
-    strncpy(s->station[2].psk, STATION_2_PSK, 10);
-  #endif
-
-  /* Zero out struct */
-  memset(&s->station[3], 0, sizeof(mx_station_t));
-  #if defined(STATION_3_ENABLED) && defined(STATION_3_SID) && defined(STATION_3_PSK)
-    /* Set station-specific fields */
-    s->station[3].enabled = STATION_3_ENABLED;
-    strncpy(s->station[3].sid, STATION_3_SID, 10);
-    strncpy(s->station[3].psk, STATION_3_PSK, 10);
-  #endif
-
-  /* Zero out struct */
-  memset(&s->station[4], 0, sizeof(mx_station_t));
-  #if defined(STATION_4_ENABLED) && defined(STATION_4_SID) && defined(STATION_4_PSK)
-		/* Set station-specific fields */
-		s->station[4].enabled = STATION_4_ENABLED;
-		strncpy(s->station[4].sid, STATION_4_SID, 10);
-		strncpy(s->station[4].psk, STATION_4_PSK, 10);
-	#endif
-
-  /* Zero out struct */
-  memset(&s->station[5], 0, sizeof(mx_station_t));
-  #if defined(STATION_5_ENABLED) && defined(STATION_5_SID) && defined(STATION_5_PSK)
-		/* Set station-specific fields */
-		s->station[5].enabled = STATION_5_ENABLED;
-		strncpy(s->station[5].sid, STATION_5_SID, 10);
-		strncpy(s->station[5].psk, STATION_5_PSK, 10);
-	#endif
-
-  /* Zero out struct */
-  memset(&s->station[6], 0, sizeof(mx_station_t));
-  #if defined(STATION_6_ENABLED) && defined(STATION_6_SID) && defined(STATION_6_PSK)
-		/* Set station-specific fields */
-		s->station[6].enabled = STATION_6_ENABLED;
-		strncpy(s->station[6].sid, STATION_6_SID, 10);
-		strncpy(s->station[6].psk, STATION_6_PSK, 10);
-  #endif
-
-  /* Zero out struct */
-  memset(&s->station[7], 0, sizeof(mx_station_t));
-  #if defined(STATION_7_ENABLED) && defined(STATION_7_SID) && defined(STATION_7_PSK)
-		/* Set station-specific fields */
-		s->station[7].enabled = STATION_7_ENABLED;
-		strncpy(s->station[7].sid, STATION_7_SID, 10);
-		strncpy(s->station[7].psk, STATION_7_PSK, 10);
-  #endif
-
-  /* Zero out struct */
-  memset(&s->station[8], 0, sizeof(mx_station_t));
-  #if defined(STATION_8_ENABLED) && defined(STATION_8_SID) && defined(STATION_8_PSK)
-		/* Set station-specific fields */
-		s->station[8].enabled = STATION_8_ENABLED;
-		strncpy(s->station[8].sid, STATION_8_SID, 10);
-		strncpy(s->station[8].psk, STATION_8_PSK, 10);
-  #endif
-
-  /* Zero out struct */
-  memset(&s->station[9], 0, sizeof(mx_station_t));
-  #if defined(STATION_9_ENABLED) && defined(STATION_9_SID) && defined(STATION_9_PSK)
-		/* Set station-specific fields */
-		s->station[9].enabled = STATION_9_ENABLED;
-		strncpy(s->station[9].sid, STATION_9_SID, 10);
-		strncpy(s->station[9].psk, STATION_9_PSK, 10);
-  #endif
-
-  /* Zero out struct */
-  memset(&s->station[10], 0, sizeof(mx_station_t));
-  #if defined(STATION_10_ENABLED) && defined(STATION_10_SID) && defined(STATION_10_PSK)
-		/* Set station-specific fields */
-		s->station[10].enabled = STATION_10_ENABLED;
-		strncpy(s->station[10].sid, STATION_10_SID, 10);
-		strncpy(s->station[10].psk, STATION_10_PSK, 10);
-  #endif
-
-  /* Zero out struct */
-  memset(&s->station[11], 0, sizeof(mx_station_t));
-  #if defined(STATION_11_ENABLED) && defined(STATION_11_SID) && defined(STATION_11_PSK)
-		/* Set station-specific fields */
-		s->station[11].enabled = STATION_11_ENABLED;
-		strncpy(s->station[11].sid, STATION_11_SID, 10);
-		strncpy(s->station[11].psk, STATION_11_PSK, 10);
-  #endif
-
-  /* Zero out struct */
-  memset(&s->station[12], 0, sizeof(mx_station_t));
-  #if defined(STATION_12_ENABLED) && defined(STATION_12_SID) && defined(STATION_12_PSK)
-		/* Set station-specific fields */
-		s->station[12].enabled = STATION_12_ENABLED;
-		strncpy(s->station[12].sid, STATION_12_SID, 10);
-		strncpy(s->station[12].psk, STATION_12_PSK, 10);
-  #endif
-
-  /* Zero out struct */
-  memset(&s->station[13], 0, sizeof(mx_station_t));
-  #if defined(STATION_13_ENABLED) && defined(STATION_13_SID) && defined(STATION_13_PSK)
-		/* Set station-specific fields */
-		s->station[13].enabled = STATION_13_ENABLED;
-		strncpy(s->station[13].sid, STATION_13_SID, 10);
-		strncpy(s->station[13].psk, STATION_13_PSK, 10);
-  #endif
-
-  /* Zero out struct */
-  memset(&s->station[14], 0, sizeof(mx_station_t));
-  #if defined(STATION_14_ENABLED) && defined(STATION_14_SID) && defined(STATION_14_PSK)
-		/* Set station-specific fields */
-		s->station[14].enabled = STATION_14_ENABLED;
-		strncpy(s->station[14].sid, STATION_14_SID, 10);
-		strncpy(s->station[14].psk, STATION_14_PSK, 10);
-  #endif
-
-  pthread_mutex_unlock(&merger.lock);
-}
-
 void *merger_mx(void* arg)
 {
     (void) arg;
-	uint64_t timestamp;
+    uint64_t timestamp;
     
     /* TODO: Trigger mx_update() via a signal or condition var (only),
      * when mx_feed() adds a new PCR packet for a station (ie. completing a new segment) */
@@ -479,8 +337,8 @@ void *merger_mx(void* arg)
      * as it would only need to compare the current versus the new one,
      * for being either newer or less lossy. */
 
-    _setup_stations(&merger);
-    
+    _reload_stations(&merger);
+
     while(1)
     {
         /* Process any pending data */

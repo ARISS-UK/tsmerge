@@ -4,7 +4,12 @@ Created by Philip Heron <phil@sanslogic.co.uk>
 
 ## Application Binaries
 
-Running *make* in this directory will compile the binaries, no special dependencies are required.
+Dependencies: libjson0-dev
+
+```
+apt install libjson0-dev
+make
+```
 
 ### tsmerge
 

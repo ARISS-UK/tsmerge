@@ -1,0 +1,16 @@
+[
+{
+  "sid": "GOONHILLY",
+  "enabled": true,
+  "latitude": 50.049,
+  "longitude": -5.183,
+  "location": "Cornwall, UK"
+},
+{
+  "sid": "M0DNY",
+  "enabled": true,
+  "latitude": 50.93,
+  "longitude": -1.39,
+  "location": "Southampton, UK"
+}
+]

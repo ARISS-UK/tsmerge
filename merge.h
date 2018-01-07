@@ -29,7 +29,7 @@ typedef struct mx_thread_t {
 
 /* Declare threads */
 /** { [pthread_t], name[64], function, arg, last_cpu, last_cpu_t } **/
-#define MX_THREAD_NUMBER   7
+#define MX_THREAD_NUMBER   8
 #define MX_DECLARE_THREADS() \
     mx_thread_t mx_threads[MX_THREAD_NUMBER] = { \
         { 0, "TCP TX Socket    ", merger_tx_socket, NULL,      0, 0 }, \
@@ -38,7 +38,8 @@ typedef struct mx_thread_t {
         { 0, "MX Loop          ", merger_mx,        NULL,      0, 0 }, \
         { 0, "UDP RX => MX Feed", merger_rx_feed,   &rxBuffer, 0, 0 }, \
         { 0, "UDP RX Socket    ", merger_rx_socket, &rxBuffer, 0, 0 }, \
-        { 0, "Stats Collection ", merger_stats,     NULL,      0, 0 }  \
+        { 0, "Stats Collection ", merger_stats,     NULL,      0, 0 }, \
+        { 0, "Stations         ", merger_stations,  NULL,      0, 0 }  \
     };
 
 #endif
