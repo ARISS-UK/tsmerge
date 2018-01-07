@@ -9,11 +9,9 @@
 
 static volatile bool reload_pending = false;
 
-static void _sighup_handler (int sig, siginfo_t *siginfo, void *context)
+static void _sighup_handler (int sig)
 {
     (void) sig;
-    (void) siginfo;
-    (void) context;
 
     reload_pending = true;
 }
@@ -23,14 +21,13 @@ void *merger_stations(void* arg)
     (void) arg;
 
     // Set up signal handler to catch reload
-    struct sigaction act;
-    memset (&act, '\0', sizeof(act));
-    act.sa_sigaction = &_sighup_handler;
-    act.sa_flags = SA_SIGINFO;
-    if (sigaction(SIGTERM, &act, NULL) < 0)
-    {
-        return 0;
-    }
+    struct sigaction new_action;
+    
+    new_action.sa_handler = &_sighup_handler;
+    sigemptyset(&new_action.sa_mask);
+    new_action.sa_flags = 0;
+
+    sigaction(SIGHUP, &new_action, NULL);
 
     while(1)
     {
