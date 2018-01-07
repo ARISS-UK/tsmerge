@@ -1,0 +1,15 @@
+[Unit]
+Description=tsmerge server
+After=syslog.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/srv/tsmerge/tsmerge
+WorkingDirectory=/srv/tsmerge/
+Restart=always
+RestartSec=1
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
