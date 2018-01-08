@@ -105,6 +105,12 @@ void _reload_stations(mx_t *s)
                 continue;
             strncpy(s->station[i].sid, (char *)json_object_get_string(field_object), 10);
 
+            json_object_object_get_ex(station_json_object, "psk", &field_object);
+            if(json_object_get_type(field_object) != json_type_string)
+                strncpy(s->station[i].psk, s->station[i].sid, 10);
+            else
+                strncpy(s->station[i].psk, (char *)json_object_get_string(field_object), 10);
+
             json_object_object_get_ex(station_json_object, "latitude", &field_object);
             if(json_object_get_type(field_object) != json_type_double)
                 continue;
