@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+source_dir="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
+cd "$source_dir"
+
+service="tsmerge-monitor"
+
+echo "Installing service"
+skel="${service}.service.skel"
+temp="${service}.service"
+sudo sed "s#{{directory}}#${source_dir}#g" < $skel > $temp
+sudo mv $temp /etc/systemd/system/
+sudo systemctl daemon-reload
+
+echo "Enabling service"
+sudo systemctl enable "$service"
+
+echo "Install Complete!"

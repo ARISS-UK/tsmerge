@@ -1,12 +1,12 @@
 [Unit]
-Description=tsmerge server
+Description=tsmerge HAMTV Merger Server
 After=syslog.target
 
 [Service]
 Type=simple
 User=root
-ExecStart=/srv/tsmerge/tsmerge
-WorkingDirectory=/srv/tsmerge/
+ExecStart={{directory}}/tsmerge
+WorkingDirectory={{directory}}
 Restart=always
 RestartSec=1
 ExecReload=/bin/kill -HUP $MAINPID

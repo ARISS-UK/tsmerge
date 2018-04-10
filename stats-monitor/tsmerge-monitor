@@ -3,7 +3,7 @@
 const UDP_PORT = 5680;
 
 const WS_HOST = '127.0.0.1';
-const WS_PORT = 5800;
+const WS_PORT = 3100;
 
 const WebSocket = require('uws');
 const dgram = require('dgram');
@@ -13,13 +13,8 @@ var wss = new WebSocketServer({ port: WS_PORT });
 
 var server = dgram.createSocket('udp4');
 
-server.on('listening', function () {
-    console.log('UDP Server listening.');
-});
-
 server.on('message', function (message, remote) {
     msg = message.toString()
-    //console.log(msg);
     
     wss.clients.forEach(function each(client) {
       if (client !== wss && client.readyState === WebSocket.OPEN) {
