@@ -82,6 +82,8 @@ void _reload_stations(mx_t *s)
     if(json_type_array != json_object_get_type(stations_json_object))
     {
         // Error loading json array
+
+        json_object_put(stations_json_object);
         return;
     }
 

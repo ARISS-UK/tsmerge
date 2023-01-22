@@ -235,6 +235,9 @@ static void stats_merger(void)
   json_object_object_add(stats_json_obj, "stations", stats_json_stations_array);
 
   udpstat_string(json_object_to_json_string(stats_json_obj));
+
+  /* Free JSON object tree */
+  json_object_put(stats_json_obj);
 }
 
 static void stats_threads(void)
@@ -272,6 +275,9 @@ static void stats_threads(void)
   json_object_object_add(stats_json_obj, "threads", stats_json_threads_array);
 
   udpstat_string(json_object_to_json_string(stats_json_obj));
+
+  /* Free JSON object tree */
+  json_object_put(stats_json_obj);
 }
 
 /* This function is run on a thread, started from main()
