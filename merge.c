@@ -94,12 +94,13 @@ int main(int argc, char *argv[])
     for(i=0; i<MX_THREAD_NUMBER; i++)
     {
         if(pthread_create(&mx_threads[i].thread, NULL, mx_threads[i].function, mx_threads[i].arg))
-         {
-             fprintf(stderr, "Error creating %s pthread\n", mx_threads[i].name);
-             return 1;
-         }
-         mx_threads[i].last_cpu_ts = timestamp_ms();
-         mx_threads[i].last_cpu = 0;
+        {
+            fprintf(stderr, "Error creating %s pthread\n", mx_threads[i].name);
+            return 1;
+        }
+        pthread_setname_np(mx_threads[i].thread, mx_threads[i].name);
+        mx_threads[i].last_cpu_ts = timestamp_ms();
+        mx_threads[i].last_cpu = 0;
     }
 	
     printf("tsmerger running. Go for launch.\n");
