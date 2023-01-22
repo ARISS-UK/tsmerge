@@ -22,7 +22,7 @@ typedef struct {
 } viewer_t;
 
 /* state for each client / viewer */
-viewer_t viewers[_VIEWERS_MAX];
+extern viewer_t viewers[_VIEWERS_MAX];
 
 typedef struct {
 
@@ -42,7 +42,7 @@ typedef struct {
 	
 } file_viewer_t;
 
-file_viewer_t file_viewer;
+extern file_viewer_t file_viewer;
 
 #endif
 

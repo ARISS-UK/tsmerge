@@ -11,6 +11,8 @@
 #include "../merge.h" /* TODO: Rework this to not require revese dependency */
 #include "merger.h"
 
+#include <json-c/json.h>
+
 #define MERGER_STATS_UDP_PORT   5680
 
 extern rxBuffer_t rxBuffer;
@@ -37,6 +39,29 @@ static char *url_encode(char *str) {
   }
   *pbuf = '\0';
   return buf;
+}
+
+static void udpstat_string(const char* statmsg)
+{
+    int sock, n;
+    socklen_t length;
+    struct sockaddr_in server;
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if(sock < 0)
+    {
+        return;
+    }
+    memset(&server, 0, sizeof(struct sockaddr_in));
+    server.sin_family = AF_INET;
+    server.sin_port = htons(MERGER_STATS_UDP_PORT);
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+    length = sizeof(struct sockaddr_in);
+    n = sendto(sock, statmsg, strlen(statmsg), 0, (const struct sockaddr *)&server, length);
+    if(n < 0)
+    {
+        return;
+    }
+    close(sock);
 }
 
 static void udpstat(char* fmt, ...)
@@ -117,12 +142,21 @@ typedef struct {
 
 stats_merger_t previous_merger_state; 
 
+#define STATS_JSONSTRING_BUFLEN 4096
 static void stats_merger(void)
 {
-  int i, j;
-  char tmpString[4096];
- 
+  int i;
   uint8_t merger_running;
+
+  struct json_object *stats_json_obj;
+  struct json_object *stats_json_stations_array;
+  struct json_object *stats_json_station_obj;
+
+  stats_json_obj = json_object_new_object();
+  json_object_object_add(stats_json_obj, "type", json_object_new_string("merger"));
+  json_object_object_add(stats_json_obj, "version", json_object_new_string(BUILD_VERSION));
+  json_object_object_add(stats_json_obj, "built", json_object_new_string(BUILD_DATE));
+  stats_json_stations_array = json_object_new_array();
  
   pthread_mutex_lock(&merger.lock);
   
@@ -141,12 +175,9 @@ static void stats_merger(void)
   {
     stats_resetLogTimestamp();
   }
-  
-  tmpString[0] = '\0';
-  sprintf(tmpString,"{\"type\":\"merger\",\"version\":\""BUILD_VERSION"\",\"built\":\""BUILD_DATE"\",\"live\":%d,\"selected\":%d,\"stations\":[",
-    merger_running,
-    merger.next_station
-  );
+
+  json_object_object_add(stats_json_obj, "live", json_object_new_int(merger_running));
+  json_object_object_add(stats_json_obj, "selected", json_object_new_int(merger.next_station));
 
   /* Sum selected count for merger contribution count */
   uint32_t selected_allstations = 0;
@@ -160,38 +191,34 @@ static void stats_merger(void)
     selected_allstations += merger.station[i].selected;
   }
   
-  for(i = j = 0; i < _STATIONS; i++)
+  for(i = 0; i < _STATIONS; i++)
   {
     if(merger.station[i].enabled == 0)
     {
       continue;
     }
-    if(j!=0)
-    {
-      /* Comma seperation */
-      sprintf(tmpString,"%s,",tmpString);
-    }
-    j++;
 
     encoded_sid = url_encode(merger.station[i].sid);
     encoded_location = url_encode(merger.station[i].location);
+
+    stats_json_station_obj = json_object_new_object();
+
+    json_object_object_add(stats_json_station_obj, "id", json_object_new_int(i));
+    json_object_object_add(stats_json_station_obj, "enabled", json_object_new_int(merger.station[i].enabled));
+    json_object_object_add(stats_json_station_obj, "callsign", json_object_new_string(encoded_sid));
+    json_object_object_add(stats_json_station_obj, "latitude", json_object_new_double(merger.station[i].latitude));
+    json_object_object_add(stats_json_station_obj, "longitude", json_object_new_double(merger.station[i].longitude));
+    json_object_object_add(stats_json_station_obj, "location", json_object_new_string(encoded_location));
+    json_object_object_add(stats_json_station_obj, "last_updated", json_object_new_int(merger.station[i].timestamp));
+    json_object_object_add(stats_json_station_obj, "received", json_object_new_int(merger.station[i].received));
+    json_object_object_add(stats_json_station_obj, "received_sum", json_object_new_int(merger.station[i].received_sum));
+    json_object_object_add(stats_json_station_obj, "selected", json_object_new_int(merger.station[i].selected));
+    json_object_object_add(stats_json_station_obj, "selected_percent", json_object_new_int((int)(100 * ((double)merger.station[i].selected / (double)selected_allstations))));
+    json_object_object_add(stats_json_station_obj, "selected_sum", json_object_new_int(merger.station[i].selected_sum));
+    json_object_object_add(stats_json_station_obj, "lost_sum", json_object_new_int(merger.station[i].latest - (merger.station[i].counter_initial + merger.station[i].received_sum)));
     
-    sprintf(tmpString,"%s{\"id\":%d,\"enabled\":%d,\"callsign\":\"%s\",\"latitude\":%.6f,\"longitude\":%.6f,\"location\":\"%s\",\"last_updated\":%ld,\"received\":%d,\"received_sum\":%d,\"selected\":%d,\"selected_percent\":%d,\"selected_sum\":%d,\"lost_sum\":%d}",
-      tmpString,
-      i,
-      merger.station[i].enabled,
-      merger.station[i].sid,
-      merger.station[i].latitude,
-      merger.station[i].longitude,
-      merger.station[i].location,
-      merger.station[i].timestamp,
-      merger.station[i].received,
-      merger.station[i].received_sum,
-      merger.station[i].selected,
-      (int)(100 * ((double)merger.station[i].selected / (double)selected_allstations)),
-      merger.station[i].selected_sum,
-      merger.station[i].latest - (merger.station[i].counter_initial + merger.station[i].received_sum)
-    );
+    json_object_array_add(stats_json_stations_array, stats_json_station_obj);
+
     free(encoded_sid);
     free(encoded_location);
 
@@ -199,18 +226,24 @@ static void stats_merger(void)
     merger.station[i].selected = 0;
   }
   pthread_mutex_unlock(&merger.lock);
-  
-  udpstat("%s]}",tmpString);
+
+  json_object_object_add(stats_json_obj, "stations", stats_json_stations_array);
+
+  udpstat_string(json_object_to_json_string(stats_json_obj));
 }
 
 static void stats_threads(void)
 {
   int i;
   int64_t timestamp_tmp, cpu_time_tmp;
-  char tmpString[1024];
-  
-  tmpString[0] = '\0';
-  sprintf(tmpString,"{\"type\":\"threads\",\"threads\":[");
+
+  struct json_object *stats_json_obj;
+  struct json_object *stats_json_threads_array;
+  struct json_object *stats_json_thread_obj;
+
+  stats_json_obj = json_object_new_object();
+  json_object_object_add(stats_json_obj, "type", json_object_new_string("threads"));
+  stats_json_threads_array = json_object_new_array();
   
   /* Print thread CPU usage time since last sampled */
   for(i=0; i<MX_THREAD_NUMBER; i++)
@@ -220,26 +253,20 @@ static void stats_threads(void)
     
     if((timestamp_tmp - mx_threads[i].last_cpu_ts) > 0)
     {
-        if(i!=0)
-        {
-          /* Comma seperation */
-          sprintf(tmpString,"%s,",tmpString);
-        }
-        
-        sprintf(tmpString,"%s{\"id\":%d,\"name\":\"%s\",\"cpu_percent\":%.2f}",
-          tmpString,
-          i,
-          mx_threads[i].name,
-          100*(double)(cpu_time_tmp - mx_threads[i].last_cpu)
-                / (timestamp_tmp - mx_threads[i].last_cpu_ts)
-        );
+      stats_json_thread_obj = json_object_new_object();
+      json_object_object_add(stats_json_thread_obj, "id", json_object_new_int(i));
+      json_object_object_add(stats_json_thread_obj, "name", json_object_new_string(mx_threads[i].name));
+      json_object_object_add(stats_json_thread_obj, "cpu_percent", json_object_new_double(100*(double)(cpu_time_tmp - mx_threads[i].last_cpu) / (timestamp_tmp - mx_threads[i].last_cpu_ts)));
+      json_object_array_add(stats_json_threads_array, stats_json_thread_obj);
     }
     
     mx_threads[i].last_cpu_ts = timestamp_tmp;
     mx_threads[i].last_cpu = cpu_time_tmp;
   }
   
-  udpstat("%s]}",tmpString);
+  json_object_object_add(stats_json_obj, "threads", stats_json_threads_array);
+
+  udpstat_string(json_object_to_json_string(stats_json_obj));
 }
 
 /* This function is run on a thread, started from main()

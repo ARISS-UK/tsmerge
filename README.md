@@ -4,10 +4,10 @@ Created by Philip Heron <phil@sanslogic.co.uk>
 
 ## Application Binaries
 
-Dependencies: libjson0-dev
+Dependencies: libjson-c-dev
 
 ```
-apt install libjson0-dev
+apt install libjson-c-dev
 make
 ```
 

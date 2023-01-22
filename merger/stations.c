@@ -3,7 +3,7 @@
 #include <signal.h>
 #include "merger.h"
 #include "stations.h"
-#include <json/json.h>
+#include <json-c/json.h>
 
 #define STATIONS_JSON_FILE "stations.json"
 

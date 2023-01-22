@@ -138,7 +138,7 @@ typedef struct {
 } mx_t;
 
 /* the TS merger state */
-mx_t merger;
+extern mx_t merger;
 
 #include "viewer.h"
 #include "input_socket.h"

@@ -7,6 +7,8 @@
 
 #include <stdlib.h> /* testing only */
 
+mx_t merger;
+
 static mx_packet_t *_get_packet(mx_t *s, int station, uint32_t counter)
 {
 	mx_packet_t *p;

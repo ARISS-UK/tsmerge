@@ -16,12 +16,13 @@ TSMERGE_SRCS = merge.c \
                 merger/stats.c \
                 merger/input_socket.c \
                 merger/input_feed.c \
+                merger/viewer.c \
 		merger/input_buffer.c \
 		merger/output_socket.c \
 		merger/output_feed.c \
 		merger/output_log.c
 
-TSMERGE_LIBS = -lpthread -ljson
+TSMERGE_LIBS = -lpthread -ljson-c
 
 ## tspush
 
