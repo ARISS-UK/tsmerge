@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 			c = p - data;
 			memmove(data, p, TS_PACKET_SIZE - c);
 			
-			if(fread(&data[TS_PACKET_SIZE - c], 1, c, f) != c)
+			if(fread(&data[TS_PACKET_SIZE - c], 1, c, f) != (size_t)c)
 			{
 				break;
 			}

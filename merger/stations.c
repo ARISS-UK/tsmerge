@@ -43,7 +43,7 @@ void *merger_stations(void* arg)
 
 static int load_stations_file(char **result) 
 { 
-	int size = 0;
+	unsigned int size = 0;
 	FILE *f = fopen(STATIONS_JSON_FILE, "rb");
 	if (f == NULL) 
 	{ 
@@ -61,7 +61,7 @@ static int load_stations_file(char **result)
 	} 
 	fclose(f);
 	(*result)[size] = 0;
-	return size;
+	return (int)size;
 }
 
 void _reload_stations(mx_t *s)

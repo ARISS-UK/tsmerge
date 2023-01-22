@@ -1,7 +1,7 @@
 
 
 CC = gcc
-CFLAGS = -gdwarf-3 -Og -Wall
+CFLAGS = -Og -ggdb -march=core-avx2 -Wall -Wextra -Wpedantic -Wunused -Werror -pthread -D_GNU_SOURCE
 CFLAGS += -D BUILD_VERSION="\"$(shell git describe --dirty --always)\""	\
 		-D BUILD_DATE="\"$(shell date '+%Y-%m-%d %H:%M:%S')\""
 
@@ -22,7 +22,7 @@ TSMERGE_SRCS = merge.c \
 		merger/output_feed.c \
 		merger/output_log.c
 
-TSMERGE_LIBS = -lpthread -ljson-c
+TSMERGE_LIBS = -ljson-c
 
 ## tspush
 

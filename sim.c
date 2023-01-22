@@ -152,6 +152,7 @@ static uint8_t _send_packet(_sim_station_t *sta)
 
 static void _handle_alarm(int sig)
 {
+	(void)sig;
     int i;
     
     for(i=0;i<SIM_STATIONS_NUMBER;i++)
@@ -273,7 +274,7 @@ int main(int argc, char *argv[])
 	        c = p - &(input_data[data_ptr]);
 	        memmove(&input_data[data_ptr], p, TS_PACKET_SIZE - c);
 	
-	        if(fread(&input_data[data_ptr + TS_PACKET_SIZE - c], 1, c, input_fd) != c)
+	        if(fread(&input_data[data_ptr + TS_PACKET_SIZE - c], 1, c, input_fd) != (size_t)c)
 	        {
 		        break;
 	        }

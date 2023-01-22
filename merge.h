@@ -14,7 +14,7 @@ typedef struct mx_thread_t {
 	char* name;
 	
 	/* Target function */
-	void* function;
+	void *(*function)(void *);
 	
 	/* Target function argument */
 	void* arg;
@@ -40,6 +40,6 @@ typedef struct mx_thread_t {
         { 0, "UDP RX Socket    ", merger_rx_socket, &rxBuffer, 0, 0 }, \
         { 0, "Stats Collection ", merger_stats,     NULL,      0, 0 }, \
         { 0, "Stations         ", merger_stations,  NULL,      0, 0 }  \
-    };
+    }
 
 #endif

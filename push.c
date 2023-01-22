@@ -151,7 +151,7 @@ static uint8_t _send_packet(void)
 	        c = p - &tspush.data[0x10];
 	        memmove(&tspush.data[0x10], p, TS_PACKET_SIZE - c);
 	
-	        if(fread(&tspush.data[0x10 + TS_PACKET_SIZE - c], 1, c, tspush.input_fd) != c)
+	        if(fread(&tspush.data[0x10 + TS_PACKET_SIZE - c], 1, c, tspush.input_fd) != (size_t)c)
 	        {
 		        return 0;
 	        }
@@ -196,6 +196,8 @@ static uint8_t _send_packet(void)
 
 static void _handle_alarm(int sig)
 {
+	(void)sig;
+
     /* Send 1 data packet */
     if(_send_packet())
     {
