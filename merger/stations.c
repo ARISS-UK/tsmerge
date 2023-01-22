@@ -128,7 +128,6 @@ void _reload_stations(mx_t *s)
             
             s->station[i].enabled = true;
         }
-        json_object_put(station_json_object);
     }
 
     pthread_mutex_unlock(&merger.lock);
