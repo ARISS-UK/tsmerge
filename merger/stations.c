@@ -66,7 +66,7 @@ static int load_stations_file(char **result)
 
 void _reload_stations(mx_t *s)
 {
-    uint32_t i;
+    uint32_t i, j;
     char *stations_json_string;
     json_object *stations_json_object;
     json_object *station_json_object;
@@ -94,7 +94,7 @@ void _reload_stations(mx_t *s)
         memset(&s->station[i], 0, sizeof(mx_station_t));
     }
 
-    for(i = 0; i < json_object_array_length(stations_json_object); i++)
+    for(j = i = 0; i < json_object_array_length(stations_json_object) && j < _STATIONS; i++)
     {
         station_json_object = json_object_array_get_idx(stations_json_object, i);
 	json_object_object_get_ex(station_json_object, "enabled", &field_object);
@@ -105,31 +105,40 @@ void _reload_stations(mx_t *s)
             json_object_object_get_ex(station_json_object, "sid", &field_object);
             if(json_object_get_type(field_object) != json_type_string)
                 continue;
-            strncpy(s->station[i].sid, (char *)json_object_get_string(field_object), 10);
+            strncpy(s->station[j].sid, (char *)json_object_get_string(field_object), 10);
 
             json_object_object_get_ex(station_json_object, "psk", &field_object);
             if(json_object_get_type(field_object) != json_type_string)
-                strncpy(s->station[i].psk, s->station[i].sid, 10);
+                strncpy(s->station[j].psk, s->station[j].sid, 10);
             else
-                strncpy(s->station[i].psk, (char *)json_object_get_string(field_object), 10);
+                strncpy(s->station[j].psk, (char *)json_object_get_string(field_object), 10);
 
             json_object_object_get_ex(station_json_object, "latitude", &field_object);
             if(json_object_get_type(field_object) != json_type_double)
                 continue;
-            s->station[i].latitude = json_object_get_double(field_object);
+            s->station[j].latitude = json_object_get_double(field_object);
 
             json_object_object_get_ex(station_json_object, "longitude", &field_object);
             if(json_object_get_type(field_object) != json_type_double)
                 continue;
-            s->station[i].longitude = json_object_get_double(field_object);
+            s->station[j].longitude = json_object_get_double(field_object);
 
             json_object_object_get_ex(station_json_object, "location", &field_object);
             if(json_object_get_type(field_object) != json_type_string)
                 continue;
-            strncpy(s->station[i].location, (char *)json_object_get_string(field_object), 64);
+            strncpy(s->station[j].location, (char *)json_object_get_string(field_object), 64);
             
-            s->station[i].enabled = true;
+            s->station[j].enabled = true;
+            j++;
         }
+    }
+    for(; i < json_object_array_length(stations_json_object); i++)
+    {
+        station_json_object = json_object_array_get_idx(stations_json_object, i);
+        json_object_object_get_ex(station_json_object, "sid", &field_object);
+        if(json_object_get_type(field_object) != json_type_string)
+            continue;
+        fprintf(stderr, "Warning: Station not loaded due to exceeding capacity: %s\n", (char *)json_object_get_string(field_object));
     }
 
     pthread_mutex_unlock(&merger.lock);
