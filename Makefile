@@ -1,7 +1,7 @@
 
 
 CC = gcc
-CFLAGS = -Og -ggdb -march=core-avx2 -Wall -Wextra -Wpedantic -Wunused -Werror -pthread -D_GNU_SOURCE
+CFLAGS = -fanalyzer -Og -ggdb -march=core-avx2 -Wall -Wextra -Wpedantic -Wunused -Werror -pthread -D_GNU_SOURCE
 CFLAGS += -D BUILD_VERSION="\"$(shell git describe --dirty --always)\""	\
 		-D BUILD_DATE="\"$(shell date '+%Y-%m-%d %H:%M:%S')\""
 

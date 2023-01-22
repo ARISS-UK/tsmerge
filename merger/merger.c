@@ -309,9 +309,18 @@ int mx_update(mx_t *s, int64_t timestamp)
 	if(o != NULL)
 	{
 		p = _get_packet(s, best_station, s->station[best_station].left);
-		
-		o->next_station = p->station;
-		o->next_counter = (pcr == best_pcr ? p->next_counter : p->counter);
+
+		if(p != NULL)
+		{
+			o->next_station = p->station;
+			o->next_counter = (pcr == best_pcr ? p->next_counter : p->counter);
+		}
+		else
+		{
+			/* Reset */
+			o->next_station = -1;
+			o->next_counter = 0;
+		}
 	}
 	
 	/* Update pointer for new stations */

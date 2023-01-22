@@ -28,6 +28,10 @@ static char to_hex(char code) {
 /* IMPORTANT: be sure to free() the returned string after use */
 static char *url_encode(char *str) {
   char *pstr = str, *buf = malloc(strlen(str) * 3 + 1), *pbuf = buf;
+  if(buf == NULL)
+  {
+    return NULL;
+  }
   while (*pstr) {
     if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' || *pstr == '.' || *pstr == '~') 
       *pbuf++ = *pstr;
