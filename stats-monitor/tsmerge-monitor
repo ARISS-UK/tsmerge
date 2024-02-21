@@ -1,26 +1,61 @@
 #!/usr/bin/env node
 
+// npm install uNetworking/uWebSockets.js#v17.3.0
+
 const UDP_PORT = 5680;
 
 const WS_HOST = '127.0.0.1';
 const WS_PORT = 3100;
 
-const WebSocket = require('uws');
+const WebSocket = require('uWebSockets.js');
 const dgram = require('dgram');
 
-var WebSocketServer = WebSocket.Server;
-var wss = new WebSocketServer({ port: WS_PORT });
+const WebSocketServer = WebSocket.App().ws('/*', {
+  /* Options */
+  compression: 0,
+  maxPayloadLength: 16 * 1024 * 1024,
+  idleTimeout: 10,
+
+  /* Handlers */
+  open: (ws) => {
+    /* Let this client listen to topic "broadcast" */
+    ws.subscribe('all');
+  },
+  message: (ws, message, isBinary) => {
+    /* Broadcast this message */
+    //ws.publish('broadcast', message, isBinary);
+  },
+  drain: (ws) => {
+
+  },
+  close: (ws, code, message) => {
+    /* The library guarantees proper unsubscription at close */
+  }
+}).any('/*', (res, req) => {
+  res.end('Nothing to see here!');
+}).listen(WS_PORT, (state) => {
+  if (state) {
+    console.log('Listening to port ' + WS_PORT);
+  } else {
+    console.log('Failed to listen to port ' + WS_PORT);
+  }
+});
 
 var server = dgram.createSocket('udp4');
 
 server.on('message', function (message, remote) {
-    msg = message.toString()
-    
-    wss.clients.forEach(function each(client) {
-      if (client !== wss && client.readyState === WebSocket.OPEN) {
+    const msg = message.toString();
+
+    WebSocketServer.publish('all', msg)
+    /*
+    WebSocketServer.clients.forEach(function each(client)
+    {
+      if (client !== WebSocketServer && client.readyState === WebSocket.OPEN) {
         client.send(msg);
       }
     });
+
+    */
 });
 
 server.bind(UDP_PORT, '127.0.0.1');
