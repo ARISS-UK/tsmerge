@@ -14,6 +14,8 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <getopt.h>
+#include <signal.h>
+
 #include "merge.h"
 #include "timing/timing.h"
 #include "merger/merger.h"
@@ -31,6 +33,13 @@ rxBuffer_t rxBuffer;
 
 /* See main.h for this macro to define and declare the threads */
 MX_DECLARE_THREADS();
+
+static bool app_exit = false;
+void sigint_handler(int sig)
+{
+  (void)sig;
+  app_exit = true;
+}
 
 void _print_version(void)
 {
@@ -55,6 +64,9 @@ int main(int argc, char *argv[])
     int i;
     int c;
     int opt;
+
+    signal(SIGINT, sigint_handler);
+    signal(SIGTERM, sigint_handler);
 
     static const struct option long_options[] = {
         { "version",     no_argument, 0, 'V' },
@@ -105,10 +117,28 @@ int main(int argc, char *argv[])
 	
     printf("tsmerger running. Go for launch.\n");
 	
-    while(1)
+    while(!app_exit)
     {
-        sleep_ms(1000);
+        sleep_ms(100);
     }
+
+    printf("\nReceived SIGTERM/INT, exiting..\n");
+    app_exit = true;
+
+    /* Interrupt all declared threads */
+    for(i=0; i<MX_THREAD_NUMBER; i++)
+    {
+        pthread_kill(mx_threads[i].thread, SIGINT);
+    //    fprintf(stderr, " - Killed %s\n", mx_threads[i].name);
+    }
+    
+    /* Wait for all declared threads */
+    //for(i=0; i<MX_THREAD_NUMBER; i++)
+    //{
+    //    fprintf(stderr, " - Waiting for %s\n", mx_threads[i].name);
+    //    pthread_join(mx_threads[i].thread, NULL);
+    //}
+    //printf("All threads caught.\n");
 	
     return(0);
 }
