@@ -6,6 +6,9 @@
 #ifndef _MERGER_H
 #define _MERGER_H
 
+#define MIN(x,y)	((x) > (y) ? (y) : (x))
+#define MAX(x,y)	((x) < (y) ? (y) : (x))
+
 #include <pthread.h>
 #include "../ts/ts.h"
 #include "../timing/timing.h"
