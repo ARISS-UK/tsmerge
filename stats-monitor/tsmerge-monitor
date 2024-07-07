@@ -7,8 +7,15 @@ const UDP_PORT = 5680;
 const WS_HOST = '127.0.0.1';
 const WS_PORT = 3100;
 
+const HTTP_HOST = '127.0.0.1';
+const HTTP_PORT = 3101;
+
 const WebSocket = require('uWebSockets.js');
 const dgram = require('dgram');
+
+const http = require("http");
+
+let merger_data = {};
 
 const WebSocketServer = WebSocket.App().ws('/*', {
   /* Options */
@@ -35,27 +42,47 @@ const WebSocketServer = WebSocket.App().ws('/*', {
   res.end('Nothing to see here!');
 }).listen(WS_PORT, (state) => {
   if (state) {
-    console.log('Listening to port ' + WS_PORT);
+    console.log('Websocket server listening to port ' + WS_PORT);
   } else {
-    console.log('Failed to listen to port ' + WS_PORT);
+    console.log('Websocket server failed to listen to port ' + WS_PORT);
   }
 });
 
-var server = dgram.createSocket('udp4');
+
+const requestListener = function (req, res) {
+    res.setHeader("Content-Type", "application/json");
+    if(req.url.startsWith("/hamtv/merger/httpstats"))
+    {
+      res.writeHead(200);
+      res.end(JSON.stringify(merger_data));
+    }
+    else
+    {
+      res.writeHead(404);
+      res.end(JSON.stringify({error:`Resource not found: ${req.url}`}));
+    }
+}
+
+const httpserver = http.createServer(requestListener);
+httpserver.listen(HTTP_PORT, HTTP_HOST, () => {
+    console.log(`HTTP Server listening on http://${HTTP_HOST}:${HTTP_PORT}`);
+});
+
+
+let server = dgram.createSocket('udp4');
 
 server.on('message', function (message, remote) {
     const msg = message.toString();
 
-    WebSocketServer.publish('all', msg)
-    /*
-    WebSocketServer.clients.forEach(function each(client)
-    {
-      if (client !== WebSocketServer && client.readyState === WebSocket.OPEN) {
-        client.send(msg);
-      }
-    });
+    WebSocketServer.publish('all', msg);
 
-    */
+    const message_obj = JSON.parse(msg);
+    if('type' in message_obj)
+    {
+      merger_data[message_obj['type']] = message_obj;
+      merger_data['updated'] = Date.now();
+    }
 });
 
+console.log(`Setting up UDP server..`);
 server.bind(UDP_PORT, '127.0.0.1');
