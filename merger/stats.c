@@ -214,7 +214,7 @@ static void stats_merger(void)
     json_object_object_add(stats_json_station_obj, "latitude", json_object_new_double(merger.station[i].latitude));
     json_object_object_add(stats_json_station_obj, "longitude", json_object_new_double(merger.station[i].longitude));
     json_object_object_add(stats_json_station_obj, "location", json_object_new_string(encoded_location));
-    json_object_object_add(stats_json_station_obj, "last_updated", json_object_new_int(merger.station[i].timestamp));
+    json_object_object_add(stats_json_station_obj, "last_updated", json_object_new_int64(merger.station[i].timestamp));
     json_object_object_add(stats_json_station_obj, "received", json_object_new_int(merger.station[i].received));
     json_object_object_add(stats_json_station_obj, "received_sum", json_object_new_int(merger.station[i].received_sum));
     json_object_object_add(stats_json_station_obj, "selected", json_object_new_int(merger.station[i].selected));
