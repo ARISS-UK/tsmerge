@@ -118,14 +118,14 @@ static void _reset_station(mx_t *s, int id, uint32_t counter)
 	s->station[id].selected_sum = 0;
 }
 
-static int _auth_station(mx_t *s, char psk[10])
+static int auth_key_station(mx_t *s, char sid[10], char psk[10])
 {
-	int i;
-	
 	/* Search for the station ID, return index if found or -1 */
-	for(i = 0; i < _STATIONS; i++)
+	for(int i = 0; i < _STATIONS; i++)
 	{
-		if(s->station[i].enabled && (strncmp(s->station[i].psk, psk, strlen(s->station[i].psk)) == 0))
+		if(s->station[i].enabled
+			&& (strncmp(s->station[i].sid, sid, strlen(s->station[i].sid)) == 0)
+			&& (strncmp(s->station[i].psk, psk, strlen(s->station[i].psk)) == 0))
 		{
 			/* Found a matching station */
 			return(i);
@@ -133,6 +133,27 @@ static int _auth_station(mx_t *s, char psk[10])
 	}
 	
 	return(-1);
+}
+
+int ext_heartbeat_station(char sid[10], char psk[10], uint32_t *received_ptr, uint32_t *lost_ptr)
+{
+	int station_id = auth_key_station(&merger, sid, psk);
+
+	if(station_id >= 0)
+	{
+		// Update station timestamp
+		merger.station[station_id].timestamp = timestamp_ms();
+
+		// Return headline stats
+		*received_ptr = merger.station[station_id].received_sum;
+		*lost_ptr = merger.station[station_id].latest - (merger.station[station_id].counter_initial + merger.station[station_id].received_sum);
+
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 void mx_init(mx_t *s, uint16_t pcr_pid)
@@ -154,18 +175,18 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 	s->timestamp = timestamp;
 	
 	/* Packet ID (2 bytes) */
-	if(data[0x00] != 0xA1 || data[0x01] != 0x55)
+	if(data[0x00] != 0xA2 || data[0x01] != 0x55)
 	{
 		/* Invalid header. Ignore this packet */
 		return;
 	}
 	
 	/* Lookup the station number */
-	i = _auth_station(s, (char *) &data[0x06]);
+	i = auth_key_station(s, (char *) &data[0x07], (char *) &data[0x07+10]);
 	
 	if(i < 0)
 	{
-		//printf("Unrecognised PSK: %.10s\n", (char *) &data[0x06]);
+		printf("Unrecognised SID: [%.10s] / PSK: [%.10s]\n", (char *) &data[0x06], (char *) &data[0x06+10]);
 		return;
 	}
 	
@@ -193,8 +214,6 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 		return;
 	}
 	
-	
-	
 	/* Get a pointer to where the packet should go */
 	p = &s->station[i].packet[counter & 0xFFFF];
 	
@@ -211,7 +230,7 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 	p->counter   = counter;
 	p->timestamp = timestamp;
 	
-	memcpy(p->raw, &data[0x10], TS_PACKET_SIZE);
+	memcpy(p->raw, &data[MX_HEADER_LEN], TS_PACKET_SIZE);
 	p->error = ts_parse_header(&p->header, p->raw);
 	
 	p->next_station = -1;
@@ -238,7 +257,6 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 
 int mx_update(mx_t *s, int64_t timestamp)
 {
-	int i;
 	mx_packet_t *o, *l, *r, *p;
 	uint64_t pcr, best_pcr;
 	uint32_t counter;
@@ -256,7 +274,7 @@ int mx_update(mx_t *s, int64_t timestamp)
 	
 	/* For each station, process the segments until we find one that
 	 * begins at or after the timestamp 'pcr' */
-	for(i = 0; i < _STATIONS; i++)
+	for(int i = 0; i < _STATIONS; i++)
 	{
 		/* Skip inactive stations */
 		if(s->station[i].sid[0] == '\0') continue;

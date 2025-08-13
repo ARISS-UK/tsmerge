@@ -22,6 +22,8 @@ void *merger_rx_socket(void *Buffer_void_ptr)
   
   int sockfd; /* socket */
   struct sockaddr_in serveraddr; /* server's addr */
+  struct sockaddr clientaddr;
+  socklen_t clientaddr_len = sizeof(struct sockaddr);
   uint8_t buf[MERGER_UDP_RX_BUFSIZE]; /* message buf */
   int optval; /* flag value for setsockopt */
   uint64_t timestamp;
@@ -66,27 +68,68 @@ void *merger_rx_socket(void *Buffer_void_ptr)
     fprintf(stderr, "Incoming socket failed to bind\n");
     return NULL;
   }
+
+  mxhbresp_header_t mxhbresp_header;
+  uint32_t ts_total, ts_loss;
+
+  fprintf(stderr, "Incoming socket ready\n");
   
   /* Infinite loop, blocks until incoming packet */
   while (1)
   {   
     /* Block here until we receive a packet */
-    n = recv(sockfd, buf, MERGER_UDP_RX_BUFSIZE, 0);
-    if (n < 0)
+    n = recvfrom(sockfd, buf, MERGER_UDP_RX_BUFSIZE, 0, (struct sockaddr *) &clientaddr, &clientaddr_len);
+    if(BRANCH_UNLIKELY(n < 0))
     {
       fprintf(stderr, "Incoming recv failed\n");
       continue;
     }
+
+    if(BRANCH_UNLIKELY(n < 2))
+    {
+      // Packet not long enough to be valid
+      continue;
+    }
+
+    if(BRANCH_LIKELY(buf[0] == MX_MAGIC0 && buf[1] == MX_MAGIC1 && (n % MX_PACKET_LEN) == 0))
+    {
+      // Packet is an MX TS packet
+
+      timestamp = timestamp_ms();
     
-    if(n % MX_PACKET_LEN != 0)
-	  {
-		  fprintf(stderr, "Incoming packet invalid size, expected a multiple of 204 bytes, got %d\n", n);
-		  continue;
-	  }
-	  
-    timestamp = timestamp_ms();
-    
-    /* Feed in the packet(s) */
-    rxBufferBurstPush(rxBufPtr, timestamp, buf, (uint16_t)n);
+      /* Feed in the packet(s) */
+      rxBufferBurstPush(rxBufPtr, timestamp, buf, (uint16_t)n);
+    }
+    else if(BRANCH_UNLIKELY(buf[0] == MXHB_MAGIC0 && buf[1] == MXHB_MAGIC1 && n > MX_HB_LEN))
+    {
+      // Packet is a heartbeat
+
+      mxhb_header_t *mxhb_header_ptr = (mxhb_header_t *)buf;
+
+      mxhbresp_header.magic_bytes = MXHBRESP_MAGICBYTES_VALUE;
+
+      if(ext_heartbeat_station(mxhb_header_ptr->callsign, mxhb_header_ptr->key, &ts_total, &ts_loss))
+      {
+        mxhbresp_header.auth_response = 0x01;
+        mxhbresp_header.original_packet_length = mxhb_header_ptr->packet_length;
+        mxhbresp_header.ts_total = ts_total;
+        mxhbresp_header.ts_loss = ts_loss;
+      }
+      else
+      {
+        mxhbresp_header.auth_response = 0x00;
+        mxhbresp_header.original_packet_length = mxhb_header_ptr->packet_length;
+        mxhbresp_header.ts_total = 0;
+        mxhbresp_header.ts_loss = 0;
+      }
+
+      sendto(sockfd, (uint8_t *)&mxhbresp_header, sizeof(mxhbresp_header), 0, &clientaddr, clientaddr_len);
+    }
+#if 0
+    else
+    {
+      fprintf(stderr, "Incoming unknown magic bytes: 0x%02x, 0x%02x, length: %d / (%d, %d)\n", buf[0], buf[1], n, MX_PACKET_LEN, MX_HB_LEN);
+    }
+#endif
   }
 }

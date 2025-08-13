@@ -9,6 +9,9 @@
 #define MIN(x,y)	((x) > (y) ? (y) : (x))
 #define MAX(x,y)	((x) < (y) ? (y) : (x))
 
+#define BRANCH_LIKELY(x)    __builtin_expect (!!(x), 1)
+#define BRANCH_UNLIKELY(x)  __builtin_expect (!!(x), 0)
+
 #include <pthread.h>
 #include "../ts/ts.h"
 #include "../timing/timing.h"
@@ -32,10 +35,75 @@
 #define _GUARD_MS 1000
 
 /* Maximum PCR range for a segment */
-#define _SEGMENT_PCR_LIMIT (90000 / 2) /* 500ms (90kHz clock) */
+#define _SEGMENT_PCR_LIMIT (0.5 * 90000) /* 500ms (90kHz clock) */
+
+/*** MX Packet - TS Upload ***/
+
+#define MX_MAGIC0 (0xA2) // This is incremented from previous key-less MX
+#define MX_MAGIC1 (0x55)
 
 /* Length of MX packet */
-#define MX_PACKET_LEN (0x10 + TS_PACKET_SIZE)
+#define MX_HEADER_LEN (2 + 4 + 1 + 10 + 10)
+#define MX_PACKET_LEN (MX_HEADER_LEN + TS_PACKET_SIZE)
+// 2 - Magic Bytes
+// 4 - Packet Counter
+// 1 - S/N
+// 10 - Callsign
+// 10 - Access Key
+// TS Packet
+
+/*** MX Heartbeat - Auth and Access check ***/
+
+#define MXHB_MAGIC0 (0xA3)
+#define MXHB_MAGIC1 (0x55)
+
+#define MX_HB_LEN (2 + 10 + 10)
+// 2 - Magic Bytes
+// 10 - Station ID
+// 10 - Access Key
+
+/*** MX Heartbeat Response ***/
+
+typedef struct {
+	uint8_t magic0;
+	uint8_t magic1;
+	uint8_t authresp;
+	uint32_t ts_total;
+	uint32_t ts_loss;
+} mx_hbresp_t;
+
+#define MXHBRESP_MAGIC0 (0xA4)
+#define MXHBRESP_MAGIC1 (0x55)
+
+#define MX_HBRESP_LEN (2 + 1 + 4 + 4)
+// 2 - Magic Bytes
+// 1 - Auth response
+// 4 - Total TS received
+// 4 - TS Lost
+
+#define MXHB_MAGICBYTES_VALUE   (0x55A3)
+typedef struct {
+    uint16_t magic_bytes;
+
+    char callsign[10];
+    char key[10];
+
+    int16_t packet_length;
+
+} __attribute__((packed)) mxhb_header_t;
+
+#define MXHBRESP_MAGICBYTES_VALUE   (0x55A4)
+typedef struct {
+    uint16_t magic_bytes;
+
+    uint8_t auth_response;
+
+    int16_t original_packet_length;
+
+    uint32_t ts_total;
+    uint32_t ts_loss;
+
+} __attribute__((packed)) mxhbresp_header_t;
 
 /* Packet structure: (little endian)
  *
@@ -161,6 +229,8 @@ extern void mx_init(mx_t *s, uint16_t pcr_pid);
 extern void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data);
 extern int mx_update(mx_t *s, int64_t timestamp);
 extern mx_packet_t *mx_next(mx_t *s, int last_station, uint32_t last_counter);
+
+int ext_heartbeat_station(char sid[10], char psk[10], uint32_t *received_ptr, uint32_t *lost_ptr);
 
 #endif
 
