@@ -157,6 +157,8 @@ static void stats_merger(void)
   struct json_object *stats_json_stations_array;
   struct json_object *stats_json_station_obj;
 
+  int64_t current_timestamp_ms;
+
   stats_json_obj = json_object_new_object();
   json_object_object_add(stats_json_obj, "type", json_object_new_string("merger"));
   json_object_object_add(stats_json_obj, "version", json_object_new_string(BUILD_VERSION));
@@ -195,6 +197,8 @@ static void stats_merger(void)
     }
     selected_allstations += merger.station[i].selected;
   }
+
+  current_timestamp_ms = timestamp_ms();
   
   for(i = 0; i < _STATIONS; i++)
   {
@@ -222,6 +226,15 @@ static void stats_merger(void)
     json_object_object_add(stats_json_station_obj, "selected_sum", json_object_new_int(merger.station[i].selected_sum));
     json_object_object_add(stats_json_station_obj, "lost_sum", json_object_new_int(merger.station[i].latest - (merger.station[i].counter_initial + merger.station[i].received_sum)));
     
+    if(merger.station[i].sn_timestamp > (current_timestamp_ms - 2000))
+    {
+      json_object_object_add(stats_json_station_obj, "s/n", json_object_new_double(((double)merger.station[i].sn_deci)/10.0));
+    }
+    else
+    {
+      json_object_object_add(stats_json_station_obj, "s/n", json_object_new_double(0.0));
+    }
+
     json_object_array_add(stats_json_stations_array, stats_json_station_obj);
 
     free(encoded_sid);
@@ -296,14 +309,14 @@ void *merger_stats(void* arg)
   
   while(1)
   {
-    /** ~5Hz */
+    /** ~2Hz */
  
     /* Merger internal Stats */
     stats_merger();
     
     if(i % 2 == 0)
     {
-      /** ~2.5Hz **/
+      /** ~1Hz **/
       
       /* Server threads stats */
       stats_threads();
