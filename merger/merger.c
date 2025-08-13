@@ -228,6 +228,9 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 		s->station[i].latest = counter;
 	}
 	
+	s->station[i].sn_deci = (uint8_t)data[0x06];
+	s->station[i].sn_timestamp = timestamp;
+
 	s->station[i].timestamp = timestamp;
 	s->station[i].received++;
 	s->station[i].received_sum++;

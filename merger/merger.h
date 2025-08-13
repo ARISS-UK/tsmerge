@@ -75,7 +75,7 @@ typedef struct {
 
 typedef struct {
 	/* Enabled */
-        bool enabled;
+	bool enabled;
 	
 	/* The station ID */
 	char sid[10];
@@ -84,9 +84,13 @@ typedef struct {
 	char psk[10];
 
 	/* The station location */
-        float latitude;
-        float longitude;
-        char location[64];
+	float latitude;
+	float longitude;
+	char location[64];
+
+	/* Current S/N reported by the station (0-25.5dB) */
+	uint8_t sn_deci;
+	int64_t sn_timestamp;
 	
 	/* The current position in the stream */
 	uint32_t current;
@@ -106,7 +110,7 @@ typedef struct {
 	
 	/* Number of times the station has been selected as best */
 	uint32_t selected;
-        uint32_t selected_sum;
+	uint32_t selected_sum;
 	
 	/* The receive time of the last packet (in ms) */
 	int64_t timestamp;
