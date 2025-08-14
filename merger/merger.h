@@ -39,18 +39,25 @@
 
 /*** MX Packet - TS Upload ***/
 
-#define MX_MAGIC0 (0xA2) // This is incremented from previous key-less MX
-#define MX_MAGIC1 (0x55)
+#define MX_MAGICBYTES_VALUE     (0x55A2)
+#define MX_MAGIC0               (0xA2)
+#define MX_MAGIC1               (0x55)
+
+typedef struct {
+    uint16_t magic_bytes;
+
+    uint32_t counter;
+
+    uint8_t snr;
+
+    char callsign[10];
+    char key[10];
+
+} __attribute__((packed)) mx_header_t;
 
 /* Length of MX packet */
-#define MX_HEADER_LEN (2 + 4 + 1 + 10 + 10)
+#define MX_HEADER_LEN (sizeof(mx_header_t))
 #define MX_PACKET_LEN (MX_HEADER_LEN + TS_PACKET_SIZE)
-// 2 - Magic Bytes
-// 4 - Packet Counter
-// 1 - S/N
-// 10 - Callsign
-// 10 - Access Key
-// TS Packet
 
 /*** MX Heartbeat - Auth and Access check ***/
 

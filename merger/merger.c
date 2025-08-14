@@ -169,32 +169,32 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 	int i;
 	int32_t d;
 	uint32_t counter;
+	mx_header_t *mxheader_ptr;
 	mx_packet_t *p;
 	
 	/* Update the global timestamp */
 	s->timestamp = timestamp;
+
+	mxheader_ptr = (mx_header_t *)data;
 	
 	/* Packet ID (2 bytes) */
-	if(data[0x00] != 0xA2 || data[0x01] != 0x55)
+	if(mxheader_ptr->magic_bytes != MX_MAGICBYTES_VALUE)
 	{
 		/* Invalid header. Ignore this packet */
 		return;
 	}
 	
 	/* Lookup the station number */
-	i = auth_key_station(s, (char *) &data[0x07], (char *) &data[0x07+10]);
+	i = auth_key_station(s, mxheader_ptr->callsign, mxheader_ptr->key);
 	
 	if(i < 0)
 	{
-		printf("Unrecognised SID: [%.10s] / PSK: [%.10s]\n", (char *) &data[0x06], (char *) &data[0x06+10]);
+		printf("Unrecognised SID: [%.10s] / PSK: [%.10s]\n", mxheader_ptr->callsign, mxheader_ptr->key);
 		return;
 	}
 	
 	/* Counter (4 bytes little-endian) */
-	counter = (uint32_t) data[0x05] << 24
-	        | (uint32_t) data[0x04] << 16
-	        | (uint32_t) data[0x03] <<  8
-	        | (uint32_t) data[0x02] <<  0;
+	counter = mxheader_ptr->counter;
 	
 	/* Existing station, ensure this new packet
 	 * has a counter within the expected bounds */
@@ -247,7 +247,7 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 		s->station[i].latest = counter;
 	}
 	
-	s->station[i].sn_deci = (uint8_t)data[0x06];
+	s->station[i].sn_deci = mxheader_ptr->snr;
 	s->station[i].sn_timestamp = timestamp;
 
 	s->station[i].timestamp = timestamp;
