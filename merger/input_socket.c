@@ -108,6 +108,12 @@ void *merger_rx_socket(void *Buffer_void_ptr)
 
       mxhbresp_header.magic_bytes = MXHBRESP_MAGICBYTES_VALUE;
 
+      // Don't acknowledge if actual packet length doesn't match the packet length in the header
+      if(n != mxhb_header_ptr->packet_length)
+      {
+        continue;
+      }
+
       if(ext_heartbeat_station(mxhb_header_ptr->callsign, mxhb_header_ptr->key, &ts_total, &ts_loss))
       {
         mxhbresp_header.auth_response = 0x01;
