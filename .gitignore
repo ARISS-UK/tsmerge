@@ -6,7 +6,8 @@ tsinfo
 tssim
 *.o
 *.ts
-stations.json
+stations-operational.json
+stations-test.json
 logs/
 merged-*.ts
 merged-*.csv

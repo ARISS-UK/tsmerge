@@ -1,18 +1,36 @@
 #!/usr/bin/env bash
 
-source_dir="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
-cd "$source_dir"
+source_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)";
+cd "${source_dir}";
 
-service="tsmerge"
 
-echo "Installing service"
-skel="${service}.service.skel"
-temp="${service}.service"
-sudo sed "s#{{directory}}#${source_dir}#g" < $skel > $temp
-sudo mv $temp /etc/systemd/system/
-sudo systemctl daemon-reload
+if [[ $(id -u) -ne 0 ]];
+then
+    echo "Error: Script must be run as superuser!";
+    exit;
+fi
 
-echo "Enabling service"
-sudo systemctl enable "$service"
 
-echo "Install Complete!"
+install_services="tsmerge-operational tsmerge-test";
+
+echo "Installing services: ${install_services}"
+
+for service in $install_services; do
+  skel="${service}.service.skel";
+  temp="${service}.service";
+  sudo sed "s#{{directory}}#${source_dir}#g" < $skel > $temp;
+  sudo mv -f $temp /etc/systemd/system/;
+done
+sudo systemctl daemon-reload;
+
+
+start_services="tsmerge-operational tsmerge-test";
+
+echo "Starting services: ${start_services}";
+for service in $start_services; do
+  sudo systemctl enable "$service";
+  sudo systemctl start "$service";
+done
+
+
+echo "Install Complete!";

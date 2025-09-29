@@ -1,0 +1,15 @@
+[Unit]
+Description=tsmerge HAMTV Merger Server
+After=syslog.target
+
+[Service]
+Type=simple
+User=root
+ExecStart={{directory}}/tsmerge --input_mx_port 9978 --output_ts_port 9979 --stats_udp_port 9980 --stations_file stations-test.json
+WorkingDirectory={{directory}}
+Restart=always
+RestartSec=1
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target

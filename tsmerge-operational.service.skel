@@ -5,7 +5,7 @@ After=syslog.target
 [Service]
 Type=simple
 User=root
-ExecStart={{directory}}/tsmerge
+ExecStart={{directory}}/tsmerge --input_mx_port 5678 --output_ts_port 5679 --stats_udp_port 5680 --stations_file stations-operational.json
 WorkingDirectory={{directory}}
 Restart=always
 RestartSec=1
