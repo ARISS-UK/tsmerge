@@ -60,7 +60,7 @@ void *merger_rx_socket(void *Buffer_void_ptr)
   memset(&serveraddr, 0, sizeof(serveraddr));
   serveraddr.sin_family = AF_INET;
   serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  serveraddr.sin_port = htons(MERGER_UDP_RX_PORT);
+  serveraddr.sin_port = htons(mx_config.input_mx_port);
 
   /* Bind Socket to server address */
   if (bind(sockfd, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) < 0)

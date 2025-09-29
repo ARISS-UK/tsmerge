@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -31,6 +32,13 @@
 
 rxBuffer_t rxBuffer;
 
+mx_config_t mx_config = {
+    .input_mx_port = DEFAULT_MERGER_UDP_RX_PORT,
+    .output_ts_port = DEFAULT_MERGER_TCP_TX_PORT,
+    .stats_udp_port = DEFAULT_MERGER_STATS_UDP_PORT,
+    .stations_filepath = DEFAULT_STATIONS_JSON_FILE
+};
+
 /* See main.h for this macro to define and declare the threads */
 MX_DECLARE_THREADS();
 
@@ -55,7 +63,15 @@ void _print_usage(void)
         "Usage: tsmerge [options]\n"
         "\n"
         "  -V, --version          Print version string and exit.\n"
-        "\n"
+        "  -i, --input_mx_port    Input UDP MX port number. (default: %d)\n"
+        "  -o, --output_ts_port   Output TCP TS port number. (default: %d)\n"
+        "  -s, --stats_udp_port   Output UDP JSON stats number. (default: %d)\n"
+        "  -f, --stations_file    Stations JSON config file. (default: %s)\n"
+        "\n",
+        DEFAULT_MERGER_UDP_RX_PORT,
+        DEFAULT_MERGER_TCP_TX_PORT,
+        DEFAULT_MERGER_STATS_UDP_PORT,
+        DEFAULT_STATIONS_JSON_FILE
     );
 }
 
@@ -69,17 +85,37 @@ int main(int argc, char *argv[])
     signal(SIGTERM, sigint_handler);
 
     static const struct option long_options[] = {
-        { "version",     no_argument, 0, 'V' },
-        { 0,             0,           0,  0  }
+        { "version",         no_argument,       NULL, 'V'  },
+        { "input_mx_port",   required_argument, NULL, 'i'  },
+        { "output_ts_port",  required_argument, NULL, 'o'  },
+        { "stats_udp_port",  required_argument, NULL, 's'  },
+        { "stations_file",   required_argument, NULL, 'f'  },
+        { 0,                 0,                 NULL, 0    }
     };
 
-    while((c = getopt_long(argc, argv, "Vd", long_options, &opt)) != -1)
+    while((c = getopt_long(argc, argv, "Vi:o:s:f:", long_options, &opt)) != -1)
     {
         switch(c)
         {
             case 'V': /* --version */
                 _print_version();
                 return 0;
+
+            case 'i': /* --input_mx_port */
+                mx_config.input_mx_port = strtoul(optarg, NULL, 10);
+                break;
+
+            case 'o': /* --output_ts_port */
+                mx_config.output_ts_port = strtoul(optarg, NULL, 10);
+                break;
+
+            case 's': /* --stats_udp_port */
+                mx_config.stats_udp_port = strtoul(optarg, NULL, 10);
+                break;
+
+            case 'f': /* --stations_file */
+                mx_config.stations_filepath = strdup(optarg);
+                break;
 
             case '?':
                 _print_usage();

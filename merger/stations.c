@@ -5,8 +5,6 @@
 #include "stations.h"
 #include <json-c/json.h>
 
-#define STATIONS_JSON_FILE "stations.json"
-
 static volatile bool reload_pending = false;
 
 static void _sighup_handler (int sig)
@@ -44,7 +42,7 @@ void *merger_stations(void* arg)
 static int load_stations_file(char **result) 
 { 
 	unsigned int size = 0;
-	FILE *f = fopen(STATIONS_JSON_FILE, "rb");
+	FILE *f = fopen(mx_config.stations_filepath, "rb");
 	if (f == NULL) 
 	{ 
 		*result = NULL;

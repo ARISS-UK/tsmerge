@@ -13,8 +13,6 @@
 
 #include <json-c/json.h>
 
-#define MERGER_STATS_UDP_PORT   5680
-
 extern rxBuffer_t rxBuffer;
 extern mx_thread_t mx_threads[];
 
@@ -57,7 +55,7 @@ static void udpstat_string(const char* statmsg)
     }
     memset(&server, 0, sizeof(struct sockaddr_in));
     server.sin_family = AF_INET;
-    server.sin_port = htons(MERGER_STATS_UDP_PORT);
+    server.sin_port = htons(mx_config.stats_udp_port);
     server.sin_addr.s_addr = inet_addr("127.0.0.1");
     length = sizeof(struct sockaddr_in);
     n = sendto(sock, statmsg, strlen(statmsg), 0, (const struct sockaddr *)&server, length);
@@ -86,7 +84,7 @@ static void udpstat(char* fmt, ...)
     }
     memset(&server, 0, sizeof(struct sockaddr_in));
     server.sin_family = AF_INET;
-    server.sin_port = htons(MERGER_STATS_UDP_PORT);
+    server.sin_port = htons(mx_config.stats_udp_port);
     server.sin_addr.s_addr = inet_addr("127.0.0.1");
     length = sizeof(struct sockaddr_in);
     n = sendto(sock, statmsg, strlen(statmsg), 0, (const struct sockaddr *)&server, length);

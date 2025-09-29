@@ -51,7 +51,7 @@ void *merger_tx_socket(void* arg)
   memset(&serveraddr, 0, sizeof(serveraddr));
   serveraddr.sin_family = AF_INET;
   serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  serveraddr.sin_port = htons(MERGER_TCP_TX_PORT);
+  serveraddr.sin_port = htons(mx_config.output_ts_port);
 
   /* Bind Socket to server address */
   if (bind(parentsock, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) < 0)

@@ -18,11 +18,14 @@
 
 #define MERGER_PCR_PID          256
 
-#define MERGER_UDP_RX_PORT          5678
 #define MERGER_UDP_RX_BUFSIZE       8192
 #define MERGER_UDP_RX_SYSBUFSIZE    212992
 
-#define MERGER_TCP_TX_PORT      5679
+#define DEFAULT_MERGER_UDP_RX_PORT      5678
+#define DEFAULT_MERGER_TCP_TX_PORT      5679
+#define DEFAULT_MERGER_STATS_UDP_PORT   5680
+
+#define DEFAULT_STATIONS_JSON_FILE 		"stations.json"
 
 /* Maximum number of stations and packets */
 #define _STATIONS 16
@@ -221,6 +224,24 @@ typedef struct {
 
 /* the TS merger state */
 extern mx_t merger;
+
+typedef struct {
+	/* Input MX UDP port */
+	uint16_t input_mx_port;
+
+	/* Output TS TCP port */
+	uint16_t output_ts_port;
+
+	/* Output Stats UDP port (JSON) */
+	uint16_t stats_udp_port;
+
+	/* Stations config filepath */
+	char *stations_filepath;
+} mx_config_t;
+
+/* the TS merger config */
+extern mx_config_t mx_config;
+
 
 #include "viewer.h"
 #include "input_socket.h"
