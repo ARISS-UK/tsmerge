@@ -166,6 +166,11 @@ typedef struct {
 	float longitude;
 	char location[64];
 
+	/* Calculated ISS Az/El from the station lat/lon */
+	float iss_az_deg;
+	float iss_el_deg;
+	int64_t iss_updated;
+
 	/* Current S/N reported by the station (0-25.5dB) */
 	uint8_t sn_deci;
 	int64_t sn_timestamp;

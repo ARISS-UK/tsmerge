@@ -1,0 +1,3 @@
+[submodule "merger/libpredict"]
+	path = merger/libpredict
+	url = https://github.com/philcrump/libpredict.git

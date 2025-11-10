@@ -5,6 +5,11 @@ CFLAGS = -fanalyzer -Og -ggdb -march=core-avx2 -Wall -Wextra -Wpedantic -Wunused
 CFLAGS += -D BUILD_VERSION="\"$(shell git describe --dirty --always)\""	\
 		-D BUILD_DATE="\"$(shell date '+%Y-%m-%d %H:%M:%S')\""
 
+### libpredict
+
+LPRED_DIR = ./merger/libpredict/
+LPRED_LDFLAGS += -L $(LPRED_DIR) -Wl,-Bstatic -lpredict -Wl,-Bdynamic -lm
+
 ## tsmerge
 
 TSMERGE_BIN = tsmerge
@@ -20,9 +25,10 @@ TSMERGE_SRCS = merge.c \
 		merger/input_buffer.c \
 		merger/output_socket.c \
 		merger/output_feed.c \
-		merger/output_log.c
+		merger/output_log.c \
+		merger/stations_azel.c
 
-TSMERGE_LIBS = -ljson-c
+TSMERGE_LIBS = -ljson-c $(LPRED_LDFLAGS)
 
 ## tspush
 
@@ -45,7 +51,14 @@ TSSIM_SRCS = sim.c \
 
 TARGETS = $(TSMERGE_BIN) $(TSPUSH_BIN) $(TSINFO_BIN) $(TSSIM_BIN)
 
-all: $(TARGETS)
+all: libpredict $(TARGETS)
+
+libpredict:
+	@if [ ! -f "${LPRED_DIR}/libpredict.a" ]; then \
+		echo "INFO: Need to compile libpredict"; \
+		cd ${LPRED_DIR}/; \
+		make static -j4; \
+	fi
 
 tsmerge:
 	$(CC) $(CFLAGS) $(TSMERGE_SRCS) -o $(TSMERGE_BIN) $(TSMERGE_LIBS)

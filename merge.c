@@ -29,6 +29,7 @@
 #include "merger/output_feed.h"
 #include "merger/output_log.h"
 #include "merger/stations.h"
+#include "merger/stations_azel.h"
 
 rxBuffer_t rxBuffer;
 
