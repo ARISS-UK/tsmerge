@@ -199,19 +199,27 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 	/* Existing station, ensure this new packet
 	 * has a counter within the expected bounds */
 	d = (int32_t) counter - (int32_t) s->station[i].current;
-	
-	if(s->station[i].connected==0 || d < -0xFFFF || d > 0xFFFF)
-	{
-		/* Never connected, or the counter is too far out */
-		printf("Station %d counter reset\n", i);
-		_reset_station(s, i, counter);
-	}
-	else if(d <= 0)
+
+	if(d <= 0 && d > -0x0000FFFF)
 	{
 		/* The current stream position has already moved past
 		 * this packet, it's too late to process it */
 		printf("Dropping late packet for station %d\n", i);
 		return;
+	}
+	
+	s->station[i].sn_deci = mxheader_ptr->snr;
+	s->station[i].sn_timestamp = timestamp;
+
+	s->station[i].timestamp = timestamp;
+	s->station[i].received++;
+	s->station[i].received_sum++;
+	
+	if(s->station[i].connected==0 || d < -0x0000FFFF || d > 0x0000FFFF)
+	{
+		/* Never connected, or the counter is too far out */
+		printf("Station %d counter reset\n", i);
+		_reset_station(s, i, counter);
 	}
 	
 	/* Get a pointer to where the packet should go */
@@ -246,13 +254,6 @@ void mx_feed(mx_t *s, int64_t timestamp, uint8_t *data)
 	{
 		s->station[i].latest = counter;
 	}
-	
-	s->station[i].sn_deci = mxheader_ptr->snr;
-	s->station[i].sn_timestamp = timestamp;
-
-	s->station[i].timestamp = timestamp;
-	s->station[i].received++;
-	s->station[i].received_sum++;
 }
 
 int mx_update(mx_t *s, int64_t timestamp)
