@@ -186,6 +186,7 @@ static void stats_merger(void)
 
   /* Sum selected count for merger contribution count */
   uint32_t selected_allstations = 0;
+  char buffer_sid[11];
   char *encoded_sid, *encoded_location;
   for(i = 0; i < _STATIONS; i++)
   {
@@ -205,7 +206,9 @@ static void stats_merger(void)
       continue;
     }
 
-    encoded_sid = url_encode(merger.station[i].sid);
+    memcpy(buffer_sid, merger.station[i].sid, 10);
+    buffer_sid[10] = '\0';
+    encoded_sid = url_encode(buffer_sid);
     encoded_location = url_encode(merger.station[i].location);
 
     stats_json_station_obj = json_object_new_object();
