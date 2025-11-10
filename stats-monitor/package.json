@@ -13,6 +13,7 @@
   },
   "bugs": "https://github.com/fsphil/tsmerge/issues",
   "dependencies": {
+    "socket.io": "^4.8.1",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.42.0"
   }
 }

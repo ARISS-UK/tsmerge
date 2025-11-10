@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
-// npm install uNetworking/uWebSockets.js#v17.3.0
-
-const UDP_PORT = 5680;
+const UDP_PORT_OPERATIONAL = 5680;
+const UDP_PORT_TEST = 9980;
 
 const WS_HOST = '127.0.0.1';
 const WS_PORT = 3100;
@@ -10,51 +9,38 @@ const WS_PORT = 3100;
 const HTTP_HOST = '127.0.0.1';
 const HTTP_PORT = 3101;
 
-const WebSocket = require('uWebSockets.js');
 const dgram = require('dgram');
 
 const http = require("http");
+const SocketIo = require('socket.io');
 
-let merger_data = {};
+let merger_data_operational = {};
+let merger_data_test = {};
 
-const WebSocketServer = WebSocket.App().ws('/*', {
-  /* Options */
-  compression: 0,
-  maxPayloadLength: 16 * 1024 * 1024,
-  idleTimeout: 10,
+const WebSocketServer = new SocketIo.Server(WS_PORT, {
+  path: "/hamtv/socket.io"
+})
 
-  /* Handlers */
-  open: (ws) => {
-    /* Let this client listen to topic "broadcast" */
-    ws.subscribe('all');
-  },
-  message: (ws, message, isBinary) => {
-    /* Broadcast this message */
-    //ws.publish('broadcast', message, isBinary);
-  },
-  drain: (ws) => {
-
-  },
-  close: (ws, code, message) => {
-    /* The library guarantees proper unsubscription at close */
-  }
-}).any('/*', (res, req) => {
-  res.end('Nothing to see here!');
-}).listen(WS_PORT, (state) => {
-  if (state) {
-    console.log('Websocket server listening to port ' + WS_PORT);
-  } else {
-    console.log('Websocket server failed to listen to port ' + WS_PORT);
-  }
+let ws_server_operational = WebSocketServer.of('/stats/operational').on("connection", socket => {
+  console.log('New ws connection on /stats/operational');
+  socket.join('operational');
+});
+let ws_server_test = WebSocketServer.of('/stats/test').on("connection", socket => {
+  console.log('New ws connection on /stats/test');
 });
 
 
 const requestListener = function (req, res) {
     res.setHeader("Content-Type", "application/json");
-    if(req.url.startsWith("/hamtv/merger/httpstats"))
+    if(req.url.startsWith("/hamtv/merger/httpstats-operational"))
     {
       res.writeHead(200);
-      res.end(JSON.stringify(merger_data));
+      res.end(JSON.stringify(merger_data_operational));
+    }
+    else if(req.url.startsWith("/hamtv/merger/httpstats-test"))
+    {
+      res.writeHead(200);
+      res.end(JSON.stringify(merger_data_test));
     }
     else
     {
@@ -69,20 +55,42 @@ httpserver.listen(HTTP_PORT, HTTP_HOST, () => {
 });
 
 
-let server = dgram.createSocket('udp4');
+console.log(`Setting up UDP servers..`);
 
-server.on('message', function (message, remote) {
+// Operational
+
+let server_operational = dgram.createSocket('udp4');
+
+server_operational.on('message', function (message, remote) {
     const msg = message.toString();
 
-    WebSocketServer.publish('all', msg);
+    ws_server_operational.emit("msg", msg);
 
     const message_obj = JSON.parse(msg);
     if('type' in message_obj)
     {
-      merger_data[message_obj['type']] = message_obj;
-      merger_data['updated'] = Date.now();
+      merger_data_operational[message_obj['type']] = message_obj;
+      merger_data_operational['updated'] = Date.now();
     }
 });
 
-console.log(`Setting up UDP server..`);
-server.bind(UDP_PORT, '127.0.0.1');
+server_operational.bind(UDP_PORT_OPERATIONAL, '127.0.0.1');
+
+// Test
+
+let server_test = dgram.createSocket('udp4');
+
+server_test.on('message', function (message, remote) {
+    const msg = message.toString();
+
+    ws_server_test.emit("msg", msg);
+
+    const message_obj = JSON.parse(msg);
+    if('type' in message_obj)
+    {
+      merger_data_test[message_obj['type']] = message_obj;
+      merger_data_test['updated'] = Date.now();
+    }
+});
+
+server_test.bind(UDP_PORT_TEST, '127.0.0.1');
